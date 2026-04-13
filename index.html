@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音箱外贸学习中心 | Speaker Export Learning Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#08080c;--s1:#101018;--s2:#181822;--s3:#22222e;--s4:#2c2c3a;
+--accent:#00ffc8;--accent2:#ff6b3d;--blue:#4d8eff;--pink:#ff4d8e;--yellow:#ffd84d;--purple:#b07aff;--red:#ff4d4d;--green:#4dff88;
+--text:#eee;--text2:#999;--text3:#555;
+--r:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Outfit','Noto Sans SC',sans-serif;line-height:1.6}
+
+/* ===== TOP NAV ===== */
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--s3);position:sticky;top:0;background:var(--bg);z-index:100}
+.top-nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;flex-shrink:0}
+.main-tabs{display:flex;gap:4px;overflow-x:auto;padding:2px 0}
+.main-tab{font-family:'Outfit','Noto Sans SC',sans-serif;font-size:12px;padding:7px 14px;border-radius:18px;border:1px solid var(--s3);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.3s;white-space:nowrap}
+.main-tab:hover{border-color:var(--text3);color:var(--text)}
+.main-tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+
+/* ===== PAGES ===== */
+.page{display:none}
+.page.active{display:block}
+.container{max-width:900px;margin:0 auto;padding:28px 20px}
+.sec-header{margin:40px 0 20px;padding-bottom:14px;border-bottom:1px solid var(--s3)}
+.sec-header:first-child{margin-top:0}
+.sec-header h2{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.sec-header p{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* ===== SIMULATOR ===== */
+.sim-layout{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 52px)}
+@media(max-width:900px){.sim-layout{grid-template-columns:1fr}}
+.controls{padding:28px;border-right:1px solid var(--s3);overflow-y:auto}
+@media(max-width:900px){.controls{border-right:none;border-bottom:1px solid var(--s3)}}
+.ctrl-group{margin-bottom:24px}
+.ctrl-group .g-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ctrl-group .g-title{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:1px;text-transform:uppercase}
+.ctrl-group .g-value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.slider-wrap input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:var(--s3);outline:none;cursor:pointer}
+.slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;cursor:pointer;border:3px solid var(--bg);transition:box-shadow 0.2s}
+.slider-ticks{display:flex;justify-content:space-between;margin-top:5px}
+.slider-ticks span{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.explain-box{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:12px 14px;margin-top:8px}
+.explain-box .ex-label{font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500}
+.explain-box .ex-text{font-size:12px;color:var(--text2);line-height:1.7}
+.explain-box .ex-text strong{color:var(--text);font-weight:500}
+.explain-box .ex-en{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);margin-top:5px;opacity:0.7}
+.visual{padding:28px;display:flex;flex-direction:column;align-items:center;gap:20px;overflow-y:auto}
+.speaker-preview{position:relative;width:100%;max-width:360px;aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.sp-body{border-radius:var(--r);border:2px solid var(--s4);display:flex;align-items:center;justify-content:center;position:relative;transition:all 0.5s cubic-bezier(0.22,1,0.36,1);overflow:hidden}
+.sp-body::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(0,255,200,0.03) 0%,transparent 70%);pointer-events:none}
+.sp-driver{border-radius:50%;border:2px solid;position:relative;display:flex;align-items:center;justify-content:center;transition:all 0.5s cubic-bezier(0.22,1,0.36,1)}
+.sp-driver::after{content:'';position:absolute;width:30%;height:30%;border-radius:50%;background:var(--bg);border:1px solid var(--s4)}
+.sp-driver-label{position:absolute;bottom:-26px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap}
+.bass-ring{position:absolute;border-radius:50%;border:1px solid var(--accent);opacity:0;animation:none;pointer-events:none}
+@keyframes bassWave{0%{transform:scale(1);opacity:0.3}100%{transform:scale(2.5);opacity:0}}
+.result-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}
+.r-card{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:12px 14px}
+.r-card .r-label{font-size:10px;color:var(--text3);margin-bottom:3px}
+.r-card .r-value{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700}
+.r-card .r-cn{font-size:10px;color:var(--text2);margin-top:3px}
+.category-badge{padding:8px 20px;border-radius:var(--r);font-size:13px;font-weight:600;text-align:center;width:100%;max-width:360px;border:1px solid}
+.match-section{width:100%;max-width:360px}
+.match-title{font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase}
+.match-brands{display:flex;flex-wrap:wrap;gap:5px}
+.match-brand{font-size:10px;padding:4px 10px;border-radius:14px;background:var(--s2);border:1px solid var(--s3);color:var(--text2)}
+.sell-tip{width:100%;max-width:360px;background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:14px}
+.sell-tip .st-title{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:5px}
+.sell-tip .st-text{font-size:12px;color:var(--text2);line-height:1.7}
+
+/* ===== SPECTRUM ===== */
+.spectrum-container{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:20px;margin-bottom:28px}
+.spectrum-bar-wrap{display:flex;align-items:flex-end;gap:3px;height:180px;padding:0 0 36px;position:relative}
+.spectrum-bar-wrap::after{content:'';position:absolute;bottom:34px;left:0;right:0;height:1px;background:var(--s3)}
+.freq-bar{flex:1;border-radius:4px 4px 0 0;cursor:pointer;transition:all 0.3s;position:relative;min-width:0}
+.freq-bar:hover{filter:brightness(1.3)}
+.freq-bar.active{filter:brightness(1.4);box-shadow:0 0 16px rgba(255,255,255,0.1)}
+.freq-bar .fb-label{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text3);white-space:nowrap}
+.freq-info{margin-top:14px;background:var(--s2);border-radius:var(--r);padding:14px;min-height:80px}
+.freq-info .fi-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.freq-info .fi-en{font-family:'JetBrains Mono',monospace;font-size:10px;opacity:0.5;margin-bottom:6px}
+.freq-info .fi-body{font-size:12px;color:var(--text2);line-height:1.7}
+.freq-info .fi-body strong{color:var(--text);font-weight:500}
+.freq-info .fi-song{margin-top:8px;padding:8px 12px;background:var(--s1);border-radius:8px;font-size:11px;color:var(--text2);border-left:3px solid}
+.body-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:28px}
+.body-card{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:14px;text-align:center}
+.body-card .bc-icon{font-size:24px;margin-bottom:6px}
+.body-card .bc-hz{font-size:12px;font-weight:500}
+.body-card .bc-desc{font-size:11px;color:var(--text2);margin-top:3px}
+
+/* ===== SONGS ===== */
+.song-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.song-card{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:16px}
+.song-card:hover{border-color:var(--text3)}
+.sc-purpose{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.sc-title{font-size:15px;font-weight:600;margin-bottom:2px}
+.sc-artist{font-size:12px;color:var(--text2);margin-bottom:8px}
+.sc-what{font-size:11px;color:var(--text2);line-height:1.7}
+.sc-what strong{color:var(--text);font-weight:500}
+.sc-listen{font-size:11px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--s3)}
+
+/* ===== TEST FLOW ===== */
+.test-flow{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.test-step{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);overflow:hidden;transition:all 0.3s}
+.test-step.completed{border-color:var(--green);background:rgba(77,255,136,0.03)}
+.test-step.fail{border-color:var(--red);background:rgba(255,77,77,0.03)}
+.step-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer}
+.step-header:hover{background:var(--s2)}
+.step-num{width:32px;height:32px;border-radius:50%;border:2px solid var(--s4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;flex-shrink:0;transition:all 0.3s}
+.test-step.completed .step-num{border-color:var(--green);color:var(--green)}
+.test-step.fail .step-num{border-color:var(--red);color:var(--red)}
+.step-title{font-size:14px;font-weight:500;flex:1}
+.step-title .en{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);display:block;margin-top:1px}
+.step-status{font-size:11px;padding:3px 10px;border-radius:10px;font-weight:500}
+.step-body{display:none;padding:0 18px 18px 62px}
+.test-step.open .step-body{display:block}
+.step-body p{font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:8px}
+.step-body p strong{color:var(--text);font-weight:500}
+.step-actions{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.step-btn{font-family:'Outfit','Noto Sans SC',sans-serif;font-size:11px;padding:7px 16px;border-radius:18px;border:1px solid;cursor:pointer;transition:all 0.3s;font-weight:500}
+.btn-pass{border-color:var(--green);color:var(--green);background:transparent}
+.btn-pass:hover{background:rgba(77,255,136,0.1)}
+.btn-fail{border-color:var(--red);color:var(--red);background:transparent}
+.btn-fail:hover{background:rgba(255,77,77,0.1)}
+.btn-reset{border-color:var(--s4);color:var(--text3);background:transparent}
+.step-tip{font-size:11px;color:var(--accent);background:rgba(0,255,200,0.05);border:1px solid rgba(0,255,200,0.1);border-radius:8px;padding:8px 12px;margin-top:8px}
+.score-section{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:20px;text-align:center}
+.score-big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;margin:8px 0 4px}
+.score-label{font-size:12px;color:var(--text2)}
+.score-bar{display:flex;gap:4px;justify-content:center;margin-top:12px}
+.score-dot{width:24px;height:7px;border-radius:3px;background:var(--s3);transition:all 0.3s}
+
+/* ===== PROBLEMS ===== */
+.problem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+.problem-card{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:16px;cursor:pointer;transition:all 0.3s}
+.problem-card:hover{border-color:var(--text3)}
+.problem-card.selected{border-color:var(--accent2);background:rgba(255,107,61,0.05)}
+.pc-icon{font-size:22px;margin-bottom:6px}
+.pc-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.pc-en{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.pc-desc{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.6}
+.diagnosis-result{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:20px;display:none}
+.diagnosis-result.visible{display:block}
+.dr-title{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--accent2)}
+.dr-cause{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--s3)}
+.dr-cause:last-child{border-bottom:none}
+.dr-cause .dc-pct{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;min-width:44px;color:var(--accent2)}
+.dr-cause .dc-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.dr-cause .dc-detail{font-size:11px;color:var(--text2);line-height:1.6}
+.dr-cause .dc-fix{font-size:11px;color:var(--accent);margin-top:3px}
+.dr-tell-client{margin-top:14px;background:var(--s2);border-radius:8px;padding:12px;font-size:12px;color:var(--text2);line-height:1.7}
+.dr-tell-client .dtc-label{font-size:10px;color:var(--yellow);font-weight:600;margin-bottom:5px}
+
+/* ===== VOCAB ===== */
+.vocab-section{margin-bottom:24px}
+.vocab-grid{display:grid;gap:6px}
+.vocab-row{display:grid;grid-template-columns:130px 90px 1fr;gap:10px;padding:12px 14px;background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);align-items:center}
+.vocab-row:hover{border-color:var(--s4)}
+.vr-en{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+.vr-cn{font-size:13px;font-weight:500}
+.vr-meaning{font-size:11px;color:var(--text2);line-height:1.6}
+@media(max-width:600px){.vocab-row{grid-template-columns:1fr;gap:3px}}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+<span class="logo">SPEAKER_HUB</span>
+<div class="main-tabs">
+<button class="main-tab active" onclick="go('sim')">📐 参数模拟</button>
+<button class="main-tab" onclick="go('freq')">🎵 频率认知</button>
+<button class="main-tab" onclick="go('songs')">🎧 测试歌曲</button>
+<button class="main-tab" onclick="go('flow')">📋 质检流程</button>
+<button class="main-tab" onclick="go('problems')">🔍 问题诊断</button>
+<button class="main-tab" onclick="go('vocab')">💬 话术词汇</button>
+</div>
+</div>
+
+<!-- ===================== PAGE: SIMULATOR ===================== -->
+<div class="page active" id="p-sim">
+<div class="sim-layout">
+<div class="controls">
+<div class="ctrl-group"><div class="g-header"><span class="g-title">⚡ Power 功率</span><span class="g-value" id="wattVal" style="color:var(--accent)">10W</span></div><div class="slider-wrap"><input type="range" id="wattSlider" min="3" max="300" value="10" step="1"></div><div class="slider-ticks"><span>3W</span><span>20W</span><span>50W</span><span>100W</span><span>300W</span></div><div class="explain-box" id="wattExplain"><div class="ex-label">这意味着什么？</div><div class="ex-text">—</div></div></div>
+<div class="ctrl-group"><div class="g-header"><span class="g-title">🔊 Driver 喇叭尺寸</span><span class="g-value" id="driverVal" style="color:var(--blue)">52mm</span></div><div class="slider-wrap"><input type="range" id="driverSlider" min="30" max="210" value="52" step="1"></div><div class="slider-ticks"><span>30mm</span><span>52mm</span><span>76mm</span><span>165mm</span><span>210mm</span></div><div class="explain-box" id="driverExplain"><div class="ex-label">喇叭大小怎么影响声音？</div><div class="ex-text">—</div></div></div>
+<div class="ctrl-group"><div class="g-header"><span class="g-title">🔋 Battery 电池容量</span><span class="g-value" id="battVal" style="color:var(--yellow)">3000mAh</span></div><div class="slider-wrap"><input type="range" id="battSlider" min="400" max="20000" value="3000" step="100"></div><div class="slider-ticks"><span>400</span><span>3000</span><span>6000</span><span>10000</span><span>20000</span></div><div class="explain-box" id="battExplain"><div class="ex-label">大概能用多久？</div><div class="ex-text">—</div></div></div>
+<div class="ctrl-group"><div class="g-header"><span class="g-title">📊 Low Freq 最低频率</span><span class="g-value" id="freqVal" style="color:var(--pink)">80Hz</span></div><div class="slider-wrap"><input type="range" id="freqSlider" min="20" max="150" value="80" step="1"></div><div class="slider-ticks"><span>20Hz</span><span>40Hz</span><span>60Hz</span><span>80Hz</span><span>150Hz</span></div><div class="explain-box" id="freqExplain"><div class="ex-label">低频数字代表什么？</div><div class="ex-text">—</div></div></div>
+<div class="ctrl-group"><div class="g-header"><span class="g-title">💧 Waterproof 防水等级</span><span class="g-value" id="ipxVal" style="color:var(--accent2)">IPX5</span></div><div class="slider-wrap"><input type="range" id="ipxSlider" min="0" max="7" value="5" step="1"></div><div class="slider-ticks"><span>IPX0</span><span>IPX4</span><span>IPX5</span><span>IPX6</span><span>IPX7</span></div><div class="explain-box" id="ipxExplain"><div class="ex-label">这个等级能防什么？</div><div class="ex-text">—</div></div></div>
+<div class="ctrl-group"><div class="g-header"><span class="g-title">📶 Bluetooth 蓝牙版本</span><span class="g-value" id="btVal" style="color:var(--accent)">5.0</span></div><div class="slider-wrap"><input type="range" id="btSlider" min="0" max="3" value="1" step="1"></div><div class="slider-ticks"><span>4.2</span><span>5.0</span><span>5.1</span><span>5.3</span></div><div class="explain-box" id="btExplain"><div class="ex-label">版本区别？</div><div class="ex-text">—</div></div></div>
+</div>
+<div class="visual">
+<div class="speaker-preview"><div class="sp-body" id="spBody" style="width:140px;height:70px;background:var(--s2)"><div class="sp-driver" id="spDriver" style="width:45px;height:45px;border-color:var(--blue)"></div><span class="sp-driver-label" id="spDriverLabel">52mm</span></div><div class="bass-ring" id="bassRing1" style="width:80px;height:80px"></div><div class="bass-ring" id="bassRing2" style="width:80px;height:80px"></div></div>
+<div class="category-badge" id="catBadge" style="background:rgba(77,142,255,0.1);border-color:rgba(77,142,255,0.3);color:var(--blue)">📦 Standard 标准便携款</div>
+<div class="result-cards"><div class="r-card"><div class="r-label">估算重量</div><div class="r-value" id="estWeight">500g</div><div class="r-cn" id="estWeightCn">约一瓶水</div></div><div class="r-card"><div class="r-label">估算续航</div><div class="r-value" id="estBattery">10h</div><div class="r-cn" id="estBatteryCn">50%音量</div></div><div class="r-card"><div class="r-label">估算FOB价</div><div class="r-value" id="estFob">$10-15</div><div class="r-cn">工厂出货价</div></div><div class="r-card"><div class="r-label">美国零售价</div><div class="r-value" id="estRetail">$40-80</div><div class="r-cn">Amazon参考</div></div></div>
+<div class="match-section"><div class="match-title">对标竞品</div><div class="match-brands" id="matchBrands"><span class="match-brand">JBL Flip 7</span></div></div>
+<div class="sell-tip" id="sellTip"><div class="st-title">💡 销售话术建议</div><div class="st-text">拖动左侧滑块，右侧实时变化</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===================== PAGE: FREQUENCY ===================== -->
+<div class="page" id="p-freq">
+<div class="container">
+<div class="sec-header" style="margin-top:0"><h2>🎵 声音频率是什么？点击色块学习</h2><p>从左到右 = 从低音到高音。每个频段听起来完全不同。</p></div>
+<div class="spectrum-container"><div class="spectrum-bar-wrap" id="spectrumBars"></div><div class="freq-info" id="freqInfo"><div class="fi-title">👆 点击上方任意频段色块</div><div class="fi-body">了解每个频段能帮你判断音箱音质，跟客户聊也能说出专业描述。</div></div></div>
+<div class="sec-header"><h2>🧠 人体感受对照</h2></div>
+<div class="body-grid">
+<div class="body-card"><div class="bc-icon">🫀</div><div class="bc-hz">20-60Hz</div><div class="bc-desc">胸口震动 · Sub-bass</div></div>
+<div class="body-card"><div class="bc-icon">🦶</div><div class="bc-hz">60-250Hz</div><div class="bc-desc">地板振动 · Bass</div></div>
+<div class="body-card"><div class="bc-icon">👂</div><div class="bc-hz">250-2kHz</div><div class="bc-desc">人声最清晰 · Mid</div></div>
+<div class="body-card"><div class="bc-icon">🧠</div><div class="bc-hz">2k-8kHz</div><div class="bc-desc">耳朵最敏感 · Presence</div></div>
+<div class="body-card"><div class="bc-icon">✨</div><div class="bc-hz">8k-20kHz</div><div class="bc-desc">空气感 · Brilliance</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===================== PAGE: SONGS ===================== -->
+<div class="page" id="p-songs">
+<div class="container">
+<div class="sec-header" style="margin-top:0"><h2>🎧 测试歌曲推荐</h2><p>每首专门检测不同方面的音质</p></div>
+<div class="song-cards">
+<div class="song-card"><div class="sc-purpose" style="color:var(--pink)">低音测试 BASS</div><div class="sc-title">Bad Guy</div><div class="sc-artist">Billie Eilish</div><div class="sc-what"><strong>听：</strong>开头低音节拍。手摸音箱感受<strong>均匀有力的震动</strong>。如果"噗噗"破音=有问题。</div><div class="sc-listen">🔊 音量 70-80%</div></div>
+<div class="song-card"><div class="sc-purpose" style="color:var(--pink)">极限低音 DEEP BASS</div><div class="sc-title">In Da Club</div><div class="sc-artist">50 Cent</div><div class="sc-what"><strong>听：</strong>开头鼓点。好音箱每下<strong>干净利落</strong>，差音箱"糊"成一团。测低音是否有"弹性"。</div><div class="sc-listen">🔊 音量 70-80%</div></div>
+<div class="song-card"><div class="sc-purpose" style="color:var(--blue)">高音测试 TREBLE</div><div class="sc-title">Hotel California</div><div class="sc-artist">Eagles</div><div class="sc-what"><strong>听：</strong>开头吉他solo。高音应<strong>清亮透明</strong>。发尖有金属感=高频失真。闷闷的=高频不够。</div><div class="sc-listen">🔊 音量 50-60%</div></div>
+<div class="song-card"><div class="sc-purpose" style="color:var(--yellow)">人声测试 VOCAL</div><div class="sc-title">Someone Like You</div><div class="sc-artist">Adele</div><div class="sc-what"><strong>听：</strong>人声应<strong>饱满温暖</strong>，不被背景音乐盖住。声音发薄像打电话=中频差。</div><div class="sc-listen">🔊 音量 50%</div></div>
+<div class="song-card"><div class="sc-purpose" style="color:var(--accent2)">最大音量 MAX VOL</div><div class="sc-title">Uptown Funk</div><div class="sc-artist">Bruno Mars</div><div class="sc-what"><strong>听：</strong>音量开到<strong>100%</strong>！听有没有<strong>破音、劈音、滋滋声</strong>。90%以上不破=品质合格。</div><div class="sc-listen">🔊 音量 100% ！</div></div>
+<div class="song-card"><div class="sc-purpose" style="color:var(--purple)">分离度 SEPARATION</div><div class="sc-title">Bohemian Rhapsody</div><div class="sc-artist">Queen</div><div class="sc-what"><strong>听：</strong>多种乐器+合唱。好音箱能<strong>分辨每个乐器和声部</strong>。全糊一起=解析力差(muddy)。</div><div class="sc-listen">🔊 音量 50-60%</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===================== PAGE: FLOW ===================== -->
+<div class="page" id="p-flow">
+<div class="container">
+<div class="sec-header" style="margin-top:0"><h2>📋 音箱质检流程（8步）</h2><p>按顺序测试，测完标记通过/不通过，底部实时评分</p></div>
+<div class="test-flow" id="testFlow"></div>
+<div class="score-section"><div style="font-size:12px;color:var(--text3);letter-spacing:1px">QUALITY SCORE</div><div class="score-big" id="scoreNum" style="color:var(--text3)">- / 8</div><div class="score-label" id="scoreLabel">还没开始测试</div><div class="score-bar" id="scoreBar"></div></div>
+</div>
+</div>
+
+<!-- ===================== PAGE: PROBLEMS ===================== -->
+<div class="page" id="p-problems">
+<div class="container">
+<div class="sec-header" style="margin-top:0"><h2>🔍 听到问题？点击症状诊断原因</h2><p>选择问题 → 分析原因 → 给你跟工厂沟通的话术和回复客户的英文模板</p></div>
+<div class="problem-grid" id="problemGrid"></div>
+<div class="diagnosis-result" id="diagResult"></div>
+</div>
+</div>
+
+<!-- ===================== PAGE: VOCAB ===================== -->
+<div class="page" id="p-vocab">
+<div class="container">
+<div class="sec-header" style="margin-top:0"><h2>💬 音质话术词汇表</h2><p>客户说这些词你要听懂，你跟客户聊也要会用</p></div>
+<div class="vocab-section"><div style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:1px;margin-bottom:10px">正面评价 · POSITIVE</div><div class="vocab-grid" id="vocabP"></div></div>
+<div class="vocab-section" style="margin-top:20px"><div style="font-size:11px;color:var(--red);font-weight:600;letter-spacing:1px;margin-bottom:10px">负面问题 · NEGATIVE</div><div class="vocab-grid" id="vocabN"></div></div>
+<div class="vocab-section" style="margin-top:20px"><div style="font-size:11px;color:var(--yellow);font-weight:600;letter-spacing:1px;margin-bottom:10px">回复客户 · REPLIES</div><div class="vocab-grid" id="vocabR"></div></div>
+</div>
+</div>
+
+<script>
+// ===== NAV =====
+function go(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('p-'+id).classList.add('active');document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');window.scrollTo(0,0);}
+
+// ===== SIMULATOR DATA =====
+const wattData=[{max:5,label:'3-5W',scene:'个人安静听歌',detail:'只够<strong>一个人在安静房间</strong>里听。Mini款，卖礼品和促销品。',en:'Personal listening. Great for gifts and promotions.'},{max:15,label:'10-15W',scene:'小房间内听清',detail:'<strong>20平米房间</strong>能听清。标准便携入门功率，JBL Flip水平。',en:'Room-filling sound. Entry level for standard portable.'},{max:30,label:'20-30W',scene:'户外也能听',detail:'<strong>户外野餐、海边</strong>也能听清。标准便携主力功率段，需求最大。',en:'Outdoor capable. Most popular power range.'},{max:60,label:'40-60W',scene:'邻居能听到',detail:'低音可以让桌子震动。<strong>Boombox级别</strong>，BBQ、泳池派对标配。',en:'Boombox territory. Backyard BBQ essential.'},{max:100,label:'60-100W',scene:'小型派对',detail:'低音强劲，<strong>胸口能感受到震动</strong>。竞争少利润高。墨西哥特别喜欢。',en:'Party-ready. High margin. Huge in Mexico.'},{max:300,label:'100-300W',scene:'演出级别',detail:'<strong>整条街都能听到</strong>。带RGB灯光、卡拉OK。墨西哥和拉美绝对爆款。',en:'Event-level. RGB + karaoke. Best seller in Latin America.'}];
+const driverData=[{max:42,mm:'30-42mm',inch:'~1.5"',desc:'<strong>Mini款</strong>专用。低音弱，成本低走量。',en:'Mini driver. Low cost, high volume.'},{max:55,mm:'45-55mm',inch:'~2"',desc:'<strong>标准便携</strong>标配。52mm行业标准，JBL Flip同款。',en:'Industry standard. Used in JBL Flip.'},{max:80,mm:'60-80mm',inch:'~3"',desc:'<strong>Boombox</strong>用。低音明显增强，通常配被动辐射器。',en:'Boombox class. Stronger bass.'},{max:170,mm:'100-170mm',inch:'4"-6.5"',desc:'<strong>派对音箱</strong>低音单元。165mm(6.5寸)是经典尺寸。',en:'Party woofer. Deep bass you can feel.'},{max:210,mm:'170-210mm',inch:'6.5"-8"',desc:'<strong>大型派对</strong>。203mm=8寸。双8寸低音非常震撼。利润最高。',en:'Large party. Dual 8-inch = massive bass. Highest margins.'}];
+const battData=[{max:800,range:'400-800mAh',hours:'4-6h',desc:'<strong>Mini款</strong>电池。够半天。',en:'Mini battery. Half-day use.'},{max:2000,range:'1000-2000mAh',hours:'6-10h',desc:'<strong>小型便携</strong>。一天户外够用。8h以上合格。',en:'Compact. Full day outdoor.'},{max:5000,range:'3000-5000mAh',hours:'10-15h',desc:'<strong>标准便携标配</strong>。一次充电管一个周末。',en:'Standard battery. Weekend-proof.'},{max:10000,range:'6000-10000mAh',hours:'15-24h',desc:'<strong>Boombox级别</strong>。有些能给手机充电。',en:'Boombox. Often doubles as power bank.'},{max:20000,range:'10000-20000mAh',hours:'看功率',desc:'<strong>大派对音箱</strong>。容量大但功率高，实际6-12h。',en:'Party speaker. High capacity but high draw.'}];
+const freqD=[{max:30,hz:'20-30Hz',desc:'<strong>极低频</strong>。只有大音箱/低音炮能做到。便携不现实。',en:'Sub-bass. Not realistic for portable.'},{max:50,hz:'30-50Hz',desc:'<strong>深低音</strong>。Boombox/派对才能做到。能感受到胸腔震动。',en:'Deep bass. Boombox/party territory.'},{max:70,hz:'50-70Hz',desc:'<strong>不错的低音</strong>。标准款做到60-70Hz很优秀。',en:'Good bass. Excellent for standard portable.'},{max:90,hz:'70-90Hz',desc:'<strong>基本低音</strong>。80Hz是大多数便携水平。中规中矩。',en:'Basic bass. 80Hz is average.'},{max:120,hz:'90-120Hz',desc:'<strong>低音较弱</strong>。只适合最便宜的入门款。',en:'Weak bass. Budget grade only.'},{max:150,hz:'120-150Hz',desc:'<strong>几乎没低音</strong>。声音很"薄"。不建议。',en:'Almost no bass. Not recommended.'}];
+const ipxD=[{val:0,desc:'<strong>不防水</strong>。不建议。',en:'No protection.'},{val:1,desc:'防垂直滴水。等于不防水。',en:'Drip-proof only.'},{val:2,desc:'防15度角滴水。跳过。',en:'Skip.'},{val:3,desc:'<strong>防喷洒</strong>。只防小雨。',en:'Spray. Light rain only.'},{val:4,desc:'<strong>防溅水</strong>。派对音箱最低标准。"splash-proof"。',en:'Splash-proof. Min for party.'},{val:5,desc:'<strong>防喷水</strong>。水龙头直接冲。户外基本门槛。',en:'Water jet proof. Outdoor baseline.'},{val:6,desc:'<strong>防强水流</strong>。高压水枪OK。',en:'High-pressure jet proof.'},{val:7,desc:'<strong>可浸泡</strong>。水里泡30分钟。<strong>最有竞争力</strong>。"fully submersible"。',en:'Submersible. Most competitive.'}];
+const btD=[{label:'4.2',desc:'<strong>老版本</strong>。给客户印象落后。不建议。',en:'Outdated.'},{label:'5.0',desc:'<strong>主流</strong>。范围10-15米。安全选择。',en:'Current mainstream.'},{label:'5.1',desc:'<strong>改良版</strong>。成本与5.0差不多，优先用。',en:'Improved. Prefer this.'},{label:'5.3',desc:'<strong>最新</strong>。延迟最低。<strong>最好的卖点</strong>。"Latest Bluetooth 5.3"。',en:'Latest. Strong selling point.'}];
+
+function updateSim(){
+const w=+wS.value,d=+dS.value,b=+bS.value,f=+fS.value,ip=+iS.value,bt=+btS.value;
+document.getElementById('wattVal').textContent=w+'W';
+document.getElementById('driverVal').textContent=d+'mm';
+document.getElementById('battVal').textContent=b+'mAh';
+document.getElementById('freqVal').textContent=f+'Hz';
+document.getElementById('ipxVal').textContent='IPX'+ip;
+document.getElementById('btVal').textContent=['4.2','5.0','5.1','5.3'][bt];
+[wS,dS,bS,fS,iS,btS].forEach(s=>{const p=((s.value-s.min)/(s.max-s.min))*100;const c=thumbC[s.id];s.style.background=`linear-gradient(90deg,${c} 0%,${c} ${p}%,var(--s3) ${p}%)`});
+const we=wattData.find(x=>w<=x.max)||wattData[5];document.getElementById('wattExplain').innerHTML=`<div class="ex-label">🎯 ${we.label} → ${we.scene}</div><div class="ex-text">${we.detail}</div><div class="ex-en">${we.en}</div>`;
+const de=driverData.find(x=>d<=x.max)||driverData[4];document.getElementById('driverExplain').innerHTML=`<div class="ex-label">📐 ${de.mm} (${de.inch})</div><div class="ex-text">${de.desc}</div><div class="ex-en">${de.en}</div>`;
+const be=battData.find(x=>b<=x.max)||battData[4];document.getElementById('battExplain').innerHTML=`<div class="ex-label">⏱ ${be.range} → ${be.hours}</div><div class="ex-text">${be.desc}</div><div class="ex-en">${be.en}</div>`;
+const fe=freqD.find(x=>f<=x.max)||freqD[5];document.getElementById('freqExplain').innerHTML=`<div class="ex-label">🎵 ${fe.hz}</div><div class="ex-text">${fe.desc}</div><div class="ex-en">${fe.en}</div>`;
+const ie=ipxD[ip];document.getElementById('ipxExplain').innerHTML=`<div class="ex-label">💧 IPX${ip}</div><div class="ex-text">${ie.desc}</div><div class="ex-en">${ie.en}</div>`;
+const bte=btD[bt];document.getElementById('btExplain').innerHTML=`<div class="ex-label">📶 BT ${bte.label}</div><div class="ex-text">${bte.desc}</div><div class="ex-en">${bte.en}</div>`;
+let bodyW,bodyH,catColor,catLabel,brands,fobP,retP,estW,estWC,estBH,sell;
+if(w<=10&&d<=55){bodyW=100;bodyH=60;catColor='var(--accent2)';catLabel='🎒 Mini 迷你款';brands=['JBL Go 4','JBL Clip 5','Sony XB100','UE Wonderboom'];fobP='$2-8';retP='$10-40';estW=Math.round(100+d*2)+'g';estWC='口袋大小';estBH=Math.round(b/500)+'h';sell='Mini款走量为主。话术："Ultra-compact, factory-direct pricing, perfect for promotional items."';}
+else if(w<=40&&d<=80){bodyW=160;bodyH=80;catColor='var(--blue)';catLabel='📦 Standard 标准款';brands=['JBL Flip 7','JBL Charge 6','Sony XB','Anker Soundcore'];fobP='$8-22';retP='$40-130';estW=Math.round(400+d*5)+'g';estWC='一瓶水左右';estBH=Math.round(b/350)+'h';sell='全球销量最大品类！话术："Best-selling size, great balance of portability and sound."';}
+else if(w<=100&&d<=170){bodyW=220;bodyH=110;catColor='var(--accent)';catLabel='🔊 Boombox 大音箱';brands=['JBL Boombox 4','JBL Xtreme 4','Tribit Stormbox'];fobP='$20-50';retP='$100-350';estW=Math.round(1500+d*10)+'g';estWC='需要提手';estBH=Math.round(b/600)+'h';sell='高利润！话术："Powerful bass, built-in handle. Perfect for backyard parties."';}
+else{bodyW=200;bodyH=180;catColor='var(--pink)';catLabel='🎉 Party 派对音箱';brands=['JBL PartyBox 310','Sony ULT Tower','W-King T9'];fobP='$40-120';retP='$150-500+';estW=Math.round(4000+d*30)+'g';estWC='需要轮子';estBH=Math.round(b/800)+'h';sell='利润最高！墨西哥主力。话术："Full party experience with LED lights and karaoke."';}
+document.getElementById('spBody').style.cssText=`width:${bodyW}px;height:${bodyH}px;background:var(--s2)`;
+const ds=Math.max(20,Math.min(d*0.6,120));document.getElementById('spDriver').style.cssText=`width:${ds}px;height:${ds}px;border-color:${catColor}`;
+document.getElementById('spDriverLabel').textContent=d+'mm ('+de.inch+')';
+const badge=document.getElementById('catBadge');badge.textContent=catLabel;badge.style.color=catColor;badge.style.borderColor=catColor;badge.style.background='rgba(0,0,0,0.3)';
+const rings=document.querySelectorAll('.bass-ring');if(w>30){rings.forEach((r,i)=>{r.style.cssText=`width:${bodyW*0.6}px;height:${bodyH*0.6}px;top:50%;left:50%;transform:translate(-50%,-50%);animation:bassWave ${1.5-w/400}s ease-out infinite;animation-delay:${i*0.4}s;border-radius:50%;border:1px solid var(--accent);position:absolute;pointer-events:none`});}else{rings.forEach(r=>r.style.animation='none');}
+document.getElementById('estWeight').textContent=estW;document.getElementById('estWeightCn').textContent=estWC;
+document.getElementById('estBattery').textContent=estBH;document.getElementById('estFob').textContent=fobP;document.getElementById('estRetail').textContent=retP;
+document.getElementById('matchBrands').innerHTML=brands.map(b=>`<span class="match-brand">${b}</span>`).join('');
+document.getElementById('sellTip').innerHTML=`<div class="st-title">💡 销售话术</div><div class="st-text">${sell}</div>`;
+}
+const wS=document.getElementById('wattSlider'),dS=document.getElementById('driverSlider'),bS=document.getElementById('battSlider'),fS=document.getElementById('freqSlider'),iS=document.getElementById('ipxSlider'),btS=document.getElementById('btSlider');
+const thumbC={wattSlider:'var(--accent)',driverSlider:'var(--blue)',battSlider:'var(--yellow)',freqSlider:'var(--pink)',ipxSlider:'var(--accent2)',btSlider:'var(--accent)'};
+let tCSS='';for(const[id,c] of Object.entries(thumbC))tCSS+=`#${id}::-webkit-slider-thumb{background:${c}}#${id}::-moz-range-thumb{background:${c};border:3px solid var(--bg);border-radius:50%;width:20px;height:20px;cursor:pointer}`;
+const sEl=document.createElement('style');sEl.textContent=tCSS;document.head.appendChild(sEl);
+[wS,dS,bS,fS,iS,btS].forEach(s=>s.addEventListener('input',updateSim));
+updateSim();
+
+// ===== SPECTRUM =====
+const freqBands=[
+{label:'20Hz',hz:'20-40Hz',name:'超低频 Sub-bass',en:'Sub-bass',color:'#ff2d55',h:30,desc:'人耳几乎听不到但<strong>身体能感受到震动</strong>。便携音箱几乎做不到。',song:'🎵 YouTube搜"20Hz bass test"',sc:'#ff2d55'},
+{label:'40Hz',hz:'40-80Hz',name:'低频 Bass',en:'Bass',color:'#ff4d8e',h:55,desc:'<strong>低音核心区域</strong>。Hip-hop鼓点、EDM的drop。便携做到60-80Hz就不错。客户说"I want good bass"就是这里。',song:'🎵 Bad Guy (Billie Eilish)',sc:'#ff4d8e'},
+{label:'80Hz',hz:'80-160Hz',name:'上低频 Punch',en:'Upper Bass',color:'#ff6b3d',h:70,desc:'<strong>低音力量感</strong>。鼓的"咚咚"、贝斯拨弦。太多会"轰"(boomy)，太少会薄。',song:'🎵 In Da Club (50 Cent)',sc:'#ff6b3d'},
+{label:'160Hz',hz:'160-300Hz',name:'中低频 Warmth',en:'Low Mids',color:'#ffd84d',h:65,desc:'<strong>温暖感</strong>来源。男声厚度、吉他共鸣。过多声音"糊"(muddy)——便宜音箱最常见问题。',song:'🎵 Someone Like You (Adele)',sc:'#ffd84d'},
+{label:'300Hz',hz:'300-600Hz',name:'中频 Body',en:'Midrange',color:'#4dff88',h:60,desc:'<strong>人声和大部分乐器</strong>基础。如果凹下去人声显得远、空洞。',song:'🎵 任何人声歌曲',sc:'#4dff88'},
+{label:'600Hz',hz:'600Hz-1.2kHz',name:'中高频',en:'Upper Mids',color:'#00ffc8',h:58,desc:'<strong>人声清晰度</strong>。咬字是否清楚、乐器"存在感"。过多"鼻音重"。',song:'🎵 Take On Me (a-ha)',sc:'#00ffc8'},
+{label:'1.2kHz',hz:'1.2-2.5kHz',name:'临场感',en:'Presence',color:'#4d8eff',h:55,desc:'<strong>人耳最敏感</strong>区域。过多"刺耳疲劳"，过少"闷缺细节"。',song:'🎵 Bohemian Rhapsody (Queen)',sc:'#4d8eff'},
+{label:'2.5kHz',hz:'2.5-5kHz',name:'穿透力',en:'Bite',color:'#4d8eff',h:48,desc:'<strong>乐器攻击感</strong>。吉他扫弦清脆声。缺少则"软绵绵"。',song:'🎵 Hotel California (Eagles)',sc:'#4d8eff'},
+{label:'5kHz',hz:'5-8kHz',name:'齿音区',en:'Sibilance',color:'#b07aff',h:40,desc:'"<strong>嘶嘶</strong>"声区域。过多很尖锐(sibilant)，便宜音箱通病。',song:'🎵 注意歌手"s"音是否刺耳',sc:'#b07aff'},
+{label:'8kHz',hz:'8-12kHz',name:'高频细节',en:'Treble',color:'#b07aff',h:32,desc:'<strong>钹、三角铁</strong>等金属乐器。音乐"亮度"和"空气感"。',song:'🎵 爵士乐中钹声',sc:'#b07aff'},
+{label:'12kHz',hz:'12-20kHz',name:'超高频',en:'Air',color:'#e0b0ff',h:20,desc:'<strong>空气感</strong>。随年龄衰减。便携音箱这里表现有限，不用太在意。',song:'🎵 便携音箱表现有限',sc:'#e0b0ff'}
+];
+const specW=document.getElementById('spectrumBars');
+freqBands.forEach(b=>{const bar=document.createElement('div');bar.className='freq-bar';bar.style.height=(b.h*2)+'px';bar.style.background=b.color;bar.innerHTML=`<span class="fb-label">${b.label}</span>`;bar.onclick=()=>{document.querySelectorAll('.freq-bar').forEach(x=>x.classList.remove('active'));bar.classList.add('active');document.getElementById('freqInfo').innerHTML=`<div class="fi-title" style="color:${b.color}">${b.name}</div><div class="fi-en">${b.en} · ${b.hz}</div><div class="fi-body">${b.desc}</div><div class="fi-song" style="border-color:${b.sc}">${b.song}</div>`;};specW.appendChild(bar);});
+
+// ===== TEST FLOW =====
+const testSteps=[
+{n:1,t:'外观检查',en:'Visual Inspection',body:'<p>不要先开机。检查：<strong>毛刺、划痕、缝隙不均、按键松动、Logo歪、Type-C口、防水胶圈</strong>。</p>',tip:'客户投诉50%以上是外观问题！'},
+{n:2,t:'开机底噪',en:'Background Noise',body:'<p><strong>开机不放音乐，音量最大</strong>，耳朵贴近听。好音箱几乎没声音。有<strong>嘶嘶声(hiss)</strong>或<strong>嗡嗡声(hum)</strong>=底噪高。连蓝牙不播放再听一次。</p>',tip:'"Minimal background noise, even at max volume."'},
+{n:3,t:'低音测试',en:'Bass Test',body:'<p>播放<strong>Bad Guy</strong>，音量<strong>70-80%</strong>。手摸感受震动是否均匀。听低音是否干净有弹性。"噗噗"破音=问题。</p>',tip:'"Punchy bass with good control, no distortion."'},
+{n:4,t:'高音测试',en:'Treble Test',body:'<p>播放<strong>Hotel California</strong>，音量<strong>50-60%</strong>。吉他高音应清亮不刺耳。发尖=高频失真。很闷=高频不够。</p>',tip:'"Crystal clear treble without harshness."'},
+{n:5,t:'人声测试',en:'Vocal Test',body:'<p>播放<strong>Someone Like You</strong>，音量<strong>50%</strong>。人声应饱满清晰，不被背景盖住。发薄像打电话=中频差。</p>',tip:'"Rich, detailed vocals that stand out clearly."'},
+{n:6,t:'最大音量失真',en:'Max Vol Distortion',body:'<p><strong>最关键！</strong>音量<strong>100%</strong>播放<strong>Uptown Funk</strong>。听破音、劈音、滋滋声。<strong>90%以上不破=合格</strong>。80%就破=不能出货。</p>',tip:'"No distortion even at maximum volume."'},
+{n:7,t:'续航测试',en:'Battery Life',body:'<p>充满电，<strong>50%音量</strong>持续播放，记录没电时间。跟标称对比，误差<strong>10-15%</strong>内正常。也记充电时间。</p>',tip:'实际续航比标称短30%以上要跟工厂沟通。'},
+{n:8,t:'防水测试',en:'Waterproof Test',body:'<p><strong>IPX5</strong>：水龙头冲30秒。<strong>IPX7</strong>：丢水盆泡30分钟。拿出来检查能否正常工作。</p>',tip:'"We test every batch — fully submersible."'}
+];
+const flowEl=document.getElementById('testFlow'),scoreBarEl=document.getElementById('scoreBar');let stepSt=new Array(8).fill('pending');
+testSteps.forEach((s,i)=>{const d=document.createElement('div');d.className='test-step';d.id='step-'+i;d.innerHTML=`<div class="step-header" onclick="togSt(${i})"><div class="step-num">${s.n}</div><div class="step-title">${s.t}<span class="en">${s.en}</span></div><span class="step-status" id="st-${i}" style="color:var(--text3)">待测试</span></div><div class="step-body">${s.body}<div class="step-tip">💡 ${s.tip}</div><div class="step-actions"><button class="step-btn btn-pass" onclick="markSt(${i},'pass')">✓ 通过</button><button class="step-btn btn-fail" onclick="markSt(${i},'fail')">✕ 不通过</button><button class="step-btn btn-reset" onclick="markSt(${i},'pending')">↺ 重置</button></div></div>`;flowEl.appendChild(d);const dot=document.createElement('div');dot.className='score-dot';dot.id='dot-'+i;scoreBarEl.appendChild(dot);});
+function togSt(i){const el=document.getElementById('step-'+i);const o=el.classList.contains('open');document.querySelectorAll('.test-step').forEach(s=>s.classList.remove('open'));if(!o)el.classList.add('open');}
+function markSt(i,s){stepSt[i]=s;const el=document.getElementById('step-'+i),st=document.getElementById('st-'+i),dot=document.getElementById('dot-'+i);el.classList.remove('completed','fail');if(s==='pass'){el.classList.add('completed');st.textContent='✓ 通过';st.style.color='var(--green)';dot.style.background='var(--green)';}else if(s==='fail'){el.classList.add('fail');st.textContent='✕ 不通过';st.style.color='var(--red)';dot.style.background='var(--red)';}else{st.textContent='待测试';st.style.color='var(--text3)';dot.style.background='var(--s3)';}updSc();event.stopPropagation();}
+function updSc(){const p=stepSt.filter(s=>s==='pass').length,f=stepSt.filter(s=>s==='fail').length,t=p+f,sn=document.getElementById('scoreNum'),sl=document.getElementById('scoreLabel');sn.textContent=p+' / 8';if(t===0){sn.style.color='var(--text3)';sl.textContent='还没开始测试';}else if(f===0&&p===8){sn.style.color='var(--green)';sl.textContent='全部通过！品质优秀，可以出货 ✓';}else if(f===0){sn.style.color='var(--accent)';sl.textContent=`已测${t}项，继续...`;}else if(f<=2){sn.style.color='var(--yellow)';sl.textContent=`${f}项不通过，需跟工厂沟通`;}else{sn.style.color='var(--red)';sl.textContent=`${f}项不通过，建议不出货`;}}
+
+// ===== PROBLEMS =====
+const problems=[
+{icon:'📢',name:'破音/劈音',en:'Distortion',desc:'音量大了"劈了""炸了"',causes:[{pct:'50%',name:'喇叭功率不够',detail:'振膜超极限。',fix:'换大功率喇叭或降低功放输出。'},{pct:'30%',name:'功放芯片差',detail:'大音量失真严重。',fix:'升级功放，要求THD<1%。'},{pct:'20%',name:'DSP限幅没设好',detail:'没在失真前限制。',fix:'调低limiter阈值。'}],reply:'We\'ve adjusted amplifier settings to eliminate distortion. Updated samples available.'},
+{icon:'🔇',name:'底噪/嘶嘶声',en:'Hiss / Noise',desc:'不放音乐也有嘶嘶嗡嗡声',causes:[{pct:'40%',name:'PCB布线问题',detail:'电源信号线太近。',fix:'优化PCB layout。'},{pct:'35%',name:'元器件质量差',detail:'电容电阻噪声大。',fix:'换品牌电容。'},{pct:'25%',name:'功放底噪高',detail:'芯片SNR低。',fix:'要求SNR>80dB。'}],reply:'We\'ve upgraded components and optimized PCB layout. Noise significantly reduced.'},
+{icon:'🫧',name:'声音发糊',en:'Muddy Sound',desc:'所有声音黏一起分不清',causes:[{pct:'45%',name:'腔体设计差',detail:'低频共振盖住中高频。',fix:'调整腔体+吸音棉。'},{pct:'35%',name:'DSP调音不好',detail:'低频增益太高。',fix:'减少200-400Hz增益。'},{pct:'20%',name:'喇叭解析力差',detail:'振膜材质差。',fix:'升级振膜或加高音单元。'}],reply:'We\'ve retuned DSP and optimized acoustic chamber. Much clearer separation now.'},
+{icon:'😣',name:'高音刺耳',en:'Harsh Treble',desc:'高频尖锐听久头疼',causes:[{pct:'50%',name:'高频增益过高',detail:'为了"亮"调太高。',fix:'降低5-8kHz EQ 2-3dB。'},{pct:'30%',name:'高频谐振',detail:'振膜共振峰。',fix:'换振膜或加notch filter。'},{pct:'20%',name:'没高音单元',detail:'全频喇叭强推高频。',fix:'加独立tweeter。'}],reply:'We\'ve fine-tuned treble response. Sound is smoother and more comfortable.'},
+{icon:'💨',name:'低音无力',en:'Weak Bass',desc:'低频不够声音薄薄的',causes:[{pct:'40%',name:'喇叭太小',detail:'物理上推不出低频。',fix:'升级喇叭或加被动辐射器。'},{pct:'35%',name:'腔体太小',detail:'空间不够。',fix:'优化腔体+被动辐射器。'},{pct:'25%',name:'DSP没调好',detail:'低频增益不够。',fix:'加低频增益+bass boost。'}],reply:'We\'ve enhanced bass with passive radiators and DSP optimization. Deeper, stronger bass.'},
+{icon:'🔌',name:'杂音/异响',en:'Rattle / Buzz',desc:'有咔嗒嗡嗡松动声',causes:[{pct:'40%',name:'组装问题',detail:'喇叭没固定好/线碰振膜。',fix:'加热熔胶固定+线材整理。'},{pct:'30%',name:'外壳共振',detail:'特定频率共振。',fix:'内部加橡胶垫/吸音棉。'},{pct:'30%',name:'虚焊',detail:'焊点震动时接触不良。',fix:'提升焊接质量，100% AOI。'}],reply:'We\'ve improved assembly QC with vibration testing. Issue resolved in latest batch.'}
+];
+const pgrid=document.getElementById('problemGrid');
+problems.forEach(p=>{const c=document.createElement('div');c.className='problem-card';c.innerHTML=`<div class="pc-icon">${p.icon}</div><div class="pc-name">${p.name}</div><div class="pc-en">${p.en}</div><div class="pc-desc">${p.desc}</div>`;c.onclick=()=>{document.querySelectorAll('.problem-card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');const dr=document.getElementById('diagResult');dr.classList.add('visible');dr.innerHTML=`<div class="dr-title">${p.icon} ${p.name} — 原因分析</div><div class="dr-causes">${p.causes.map(c=>`<div class="dr-cause"><div class="dc-pct">${c.pct}</div><div><div class="dc-name">${c.name}</div><div class="dc-detail">${c.detail}</div><div class="dc-fix">🔧 ${c.fix}</div></div></div>`).join('')}</div><div class="dr-tell-client"><div class="dtc-label">📧 回复客户英文模板</div>${p.reply}</div>`;};pgrid.appendChild(c);});
+
+// ===== VOCAB =====
+const vP=[{en:'Deep bass',cn:'低音深沉',m:'能感受到身体震动。'},{en:'Punchy',cn:'有力/有弹性',m:'低音干净不拖泥带水。'},{en:'Crisp / Clear',cn:'清脆/清晰',m:'中高频细节丰富。'},{en:'Warm',cn:'温暖',m:'中低频饱满舒服。'},{en:'Balanced',cn:'均衡',m:'高中低频不偏科。'},{en:'Loud',cn:'声音大',m:'开一半就能覆盖整房间。'},{en:'No distortion',cn:'不失真',m:'开大也不破音。'},{en:'Good separation',cn:'分离度好',m:'能分清每个乐器和人声。'}];
+const vN=[{en:'Distortion',cn:'失真/破音',m:'音量大声音变形。最常见投诉。'},{en:'Muddy',cn:'浑浊/糊',m:'声音黏一起。中低频太多。'},{en:'Tinny / Thin',cn:'发薄',m:'低音几乎没有。'},{en:'Harsh',cn:'刺耳',m:'高频尖锐。DSP问题。'},{en:'Hiss / Noise',cn:'底噪',m:'没放音乐也有嘶嘶声。'},{en:'Boomy',cn:'轰轰响',m:'低音太多太闷。'},{en:'Rattle',cn:'杂音',m:'零件松动或外壳共振。'},{en:'Quiet',cn:'音量小',m:'最大音量不够大。'}];
+const vR=[{en:'We\'ve tested the samples...',cn:'我们测试了样品...',m:'开头表明你测过。'},{en:'We noticed [issue] at [condition]',cn:'在[条件]下发现[问题]',m:'"We noticed distortion at 90%."'},{en:'Could you adjust the DSP?',cn:'能调一下DSP吗？',m:'说得专业工厂重视你。'},{en:'Please send updated samples',cn:'请寄更新样品确认',m:'要求验证。'},{en:'Sound quality meets our standards',cn:'音质达标',m:'确认OK用。'},{en:'Compared to [brand]...',cn:'跟[品牌]比...',m:'客户常问跟JBL比如何。'}];
+function rV(data,cid){const c=document.getElementById(cid);data.forEach(v=>{const r=document.createElement('div');r.className='vocab-row';r.innerHTML=`<div class="vr-en">${v.en}</div><div class="vr-cn">${v.cn}</div><div class="vr-meaning">${v.m}</div>`;c.appendChild(r);});}
+rV(vP,'vocabP');rV(vN,'vocabN');rV(vR,'vocabR');
+</script>
+</body>
+</html>
