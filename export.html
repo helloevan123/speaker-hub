@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>报关出口 | Customs Export Learning Module</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#08080c;--s1:#101018;--s2:#181822;--s3:#22222e;--s4:#2c2c3a;
+--accent:#00ffc8;--blue:#4d8eff;--pink:#ff4d8e;--yellow:#ffd84d;--purple:#b07aff;--red:#ff4d4d;--green:#4dff88;
+--text:#eee;--text2:#999;--text3:#555;
+--r:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Outfit','Noto Sans SC',sans-serif;line-height:1.6}
+
+/* ===== TOP NAV ===== */
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--s3);position:sticky;top:0;background:var(--bg);z-index:100}
+.top-nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;flex-shrink:0}
+.main-tabs{display:flex;gap:4px;overflow-x:auto;padding:2px 0}
+.main-tab{font-family:'Outfit','Noto Sans SC',sans-serif;font-size:12px;padding:7px 14px;border-radius:18px;border:1px solid var(--s3);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.3s;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center}
+.main-tab:hover{border-color:var(--text3);color:var(--text)}
+.main-tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+
+/* ===== SUB-NAV ===== */
+.sub-nav{display:flex;gap:4px;padding:12px 20px;border-bottom:1px solid var(--s3);overflow-x:auto;background:var(--s1)}
+.sub-tab{font-size:12px;padding:6px 12px;border-radius:14px;border:1px solid var(--s3);background:transparent;color:var(--text2);cursor:pointer;transition:all 0.3s;white-space:nowrap}
+.sub-tab:hover{border-color:var(--text3);color:var(--text)}
+.sub-tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+
+/* ===== PAGES & SECTIONS ===== */
+.section{display:none}
+.section.active{display:block}
+.container{max-width:900px;margin:0 auto;padding:28px 20px}
+.sec-header{margin:0 0 20px;padding-bottom:14px;border-bottom:1px solid var(--s3)}
+.sec-header h2{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.sec-header p{font-size:13px;color:var(--text2)}
+
+/* ===== EXPORT FLOW ACCORDION ===== */
+.flow-steps{display:flex;flex-direction:column;gap:10px}
+.flow-step{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);overflow:hidden;transition:all 0.3s}
+.flow-step.open{border-color:var(--accent);background:rgba(0,255,200,0.02)}
+.step-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none}
+.step-header:hover{background:var(--s2)}
+.step-num{width:32px;height:32px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;color:var(--accent)}
+.step-titles{flex:1}
+.step-title{font-size:14px;font-weight:600}
+.step-en{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);display:block;margin-top:1px}
+.step-icon{font-size:16px}
+.step-body{display:none;padding:0 18px 18px 62px;color:var(--text2);line-height:1.8}
+.flow-step.open .step-body{display:block}
+
+/* ===== HS CODES TABLE ===== */
+.hs-table{width:100%;border-collapse:collapse;margin-bottom:28px}
+.hs-table thead{background:var(--s1)}
+.hs-table th{padding:12px 14px;text-align:left;font-size:12px;font-weight:600;border-bottom:1px solid var(--s3);color:var(--accent)}
+.hs-table td{padding:12px 14px;border-bottom:1px solid var(--s3);font-size:13px}
+.hs-table tr:hover{background:var(--s1)}
+.hs-code{font-family:'JetBrains Mono',monospace;color:var(--blue);font-weight:500}
+.hs-category{font-size:11px;color:var(--yellow);font-weight:600}
+
+/* ===== TRADE TERMS CARDS ===== */
+.trade-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:28px}
+.trade-card{background:var(--s1);border:1px solid var(--s3);border-radius:var(--r);padding:16px;cursor:pointer;transition:all 0.3s}
+.trade-card:hover{border-color:var(--text3);background:var(--s2)}
+.tc-code{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:6px}
+.tc-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.tc-cn{font-size:12px;color:var(--text2);margin-bottom:8px}
+.tc-desc{font-size:11px;color:var(--text2);line-height:1.7}
+.tc-highlight{color:var(--accent);font-weight:500}
+
+/* ===== DOCUMENT CHECKLIST ===== */
+.checklist-section{margin-bottom:24px}
+.checklist-title{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.checklist-items{display:flex;flex-direction:column;gap:6px}
+.checklist-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s1);border:1px solid var(--s3);border-radius:8px;font-size:12px}
+.checkbox{width:18px;height:18px;border:1px solid var(--s3);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--s2);flex-shrink:0;transition:all 0.2s}
+.checkbox.checked{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.item-name{flex:1}
+.item-detail{font-size:10px;color:var(--text3)}
+
+/* ===== CUSTOMS VOCAB ===== */
+.vocab-category{margin-bottom:28px}
+.vocab-cat-title{font-size:11px;color:var(--accent);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:8px 0;border-bottom:1px solid var(--s3)}
+.vocab-items{display:flex;flex-direction:column;gap:8px}
+.vocab-item{display:flex;gap:12px;padding:12px 14px;background:var(--s1);border:1px solid var(--s3);border-radius:var(--r)}
+.vocab-en{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);font-weight:600;min-width:180px;flex-shrink:0}
+.vocab-slash{color:var(--text3)}
+.vocab-cn{font-size:12px;color:var(--text)}"
+.vocab-meaning{font-size:11px;color:var(--text2);flex:1}
+
+/* ===== UTILITY ===== */
+.tip-box{background:rgba(0,255,200,0.05);border:1px solid rgba(0,255,200,0.15);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:11px;color:var(--text2)}
+.tip-box strong{color:var(--accent);font-weight:600}
+
+@media(max-width:600px){
+.hs-table{font-size:11px}
+.hs-table th,.hs-table td{padding:8px 10px}
+.trade-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+<span class="logo">SPEAKER_HUB</span>
+<div class="main-tabs">
+<a href="index.html" class="main-tab" style="text-decoration:none">📐 参数模拟</a>
+<a href="export.html" class="main-tab active" style="text-decoration:none">📦 报关出口</a>
+<a href="docs.html" class="main-tab" style="text-decoration:none">🧾 单据生成</a>
+</div>
+</div>
+
+<div class="sub-nav">
+<button class="sub-tab active" onclick="showSection(this, 'flow')">出口流程</button>
+<button class="sub-tab" onclick="showSection(this, 'codes')">HS编码</button>
+<button class="sub-tab" onclick="showSection(this, 'terms')">贸易术语</button>
+<button class="sub-tab" onclick="showSection(this, 'docs')">单据清单</button>
+<button class="sub-tab" onclick="showSection(this, 'vocab')">报关话术</button>
+</div>
+
+<!-- ==================== EXPORT FLOW ==================== -->
+<div class="section active" id="flow">
+<div class="container">
+<div class="sec-header" style="margin-top:0">
+<h2>📦 音箱出口9大步骤</h2>
+<p>从接到客户订单到退税申报，完整的出口流程</p>
+</div>
+
+<div class="flow-steps">
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">1</div>
+<div class="step-titles">
+<span class="step-title">接到客户PO</span>
+<span class="step-en">Receive Purchase Order</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+客户发来采购订单，需要确认：<strong>产品型号、数量、单价、交期、国家/地区、进口商信息</strong>。PO是后续所有单据的基础，仔细核对。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">2</div>
+<div class="step-titles">
+<span class="step-title">签订出口合同</span>
+<span class="step-en">Sign Sales Contract</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+基于PO签订正式出口合同，包含：<strong>买卖方信息、货物详细描述（型号、数量、单位）、成交方式（FOB）、付款条件（通常T/T 50%订金 50%见提单副本）、交期、仲裁条款</strong>。合同对交易有法律约束力。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">3</div>
+<div class="step-titles">
+<span class="step-title">安排生产验货</span>
+<span class="step-en">Production & Quality Control</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+根据订单型号和数量排产。出货前进行<strong>QC质检</strong>：检查外观、功能测试、防水测试等。合格后贴唛头（Carton Marks），准备装箱。通常给客户发送<strong>PTP照片（Pre-Trial Production）</strong>。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">4</div>
+<div class="step-titles">
+<span class="step-title">订舱装柜</span>
+<span class="step-en">Book Container & Load Cargo</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+联系<strong>货运代理（Freight Forwarder）</strong>或<strong>船公司</strong>订舱。根据货量选择：<strong>整柜FCL</strong>（Full Container Load，通常20尺或40尺）或<strong>拼柜LCL</strong>（Less than Container Load）。安排<strong>拖车</strong>到工厂提货装柜。这一步要确认<strong>截关日期（Cut-off Date）</strong>和<strong>开船时间（ETD）</strong>。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">5</div>
+<div class="step-titles">
+<span class="step-title">报关申报</span>
+<span class="step-en">Customs Declaration</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+准备报关单据，包括：<strong>报关单、商业发票（Commercial Invoice）、装箱单（Packing List）、出口合同、HS编码申报表</strong>。由<strong>报关行</strong>代理向海关申报。需要申报：货物名称、HS编码、数量、重量、值万、成交方式、原产地等。这一步通常在装柜前或装柜时进行。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">6</div>
+<div class="step-titles">
+<span class="step-title">海关查验</span>
+<span class="step-en">Customs Inspection</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+海关<strong>可能</strong>抽查。开柜核对：实物与申报数量、品名、箱数是否一致。检查是否有违禁品。如果查到问题会<strong>布控（Hold）</strong>，无法放行。申报务必准确！音箱出口抽查率约5-10%。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">7</div>
+<div class="step-titles">
+<span class="step-title">放行装船</span>
+<span class="step-en">Customs Release & Load Vessel</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+查验通过（或未查验）海关签署<strong>放行条（Customs Release Note）</strong>。货物装上船，船公司出具<strong>提单B/L（Bill of Lading）</strong>。提单是货物的<strong>所有权证明</strong>和<strong>提货凭证</strong>。通常3-5个工作日后拿到提单。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">8</div>
+<div class="step-titles">
+<span class="step-title">收汇核销</span>
+<span class="step-en">Payment Collection & Verification</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+提单出来后，发送<strong>提单副本</strong>给客户触发付款（通常尾款50%）。客户通过<strong>信用证LC</strong>或<strong>电汇T/T</strong>付款到公司账户。银行收汇后，用<strong>核销单</strong>到外汇局办理<strong>核销</strong>。这是出口结汇的必需步骤。
+</div>
+</div>
+
+<div class="flow-step" onclick="toggleStep(this)">
+<div class="step-header">
+<div class="step-num">9</div>
+<div class="step-titles">
+<span class="step-title">退税申报</span>
+<span class="step-en">Export Tax Refund Application</span>
+</div>
+<div class="step-icon">▶</div>
+</div>
+<div class="step-body">
+根据海关报关单、外汇核销单、发票等，向<strong>税务局</strong>申报<strong>出口退税</strong>。音箱类产品（根据具体HS编码）退税率约<strong>13%</strong>。一般2-3个月后税局审核，然后退款到公司账户。这笔钱很关键，是利润来源。
+</div>
+</div>
+</div>
+
+<div class="tip-box">
+<strong>💡 核心提示：</strong> 从接PO到收退税，整个周期约2-3个月。每一步都要与货代、报关行、客户沟通到位。单据必须齐全准确，否则清关延期会产生滞箱费。
+</div>
+</div>
+</div>
+
+<!-- ==================== HS CODES ==================== -->
+<div class="section" id="codes">
+<div class="container">
+<div class="sec-header" style="margin-top:0">
+<h2>📋 HS编码表</h2>
+<p>音箱产品线完整编码，用于报关申报</p>
+</div>
+
+<table class="hs-table">
+<thead>
+<tr>
+<th>HS编码</th>
+<th>产品描述</th>
+<th>分类</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="hs-code">8527910000</span></td>
+<td>音箱整机（包括收音机）</td>
+<td><span class="hs-category">主机</span></td>
+</tr>
+<tr>
+<td><span class="hs-code">8518290000</span></td>
+<td>喇叭/扬声器</td>
+<td><span class="hs-category">配件</span></td>
+</tr>
+<tr>
+<td><span class="hs-code">8518900090</span></td>
+<td>音箱零配件（功放板、电源板、支架等）</td>
+<td><span class="hs-category">配件</span></td>
+</tr>
+<tr>
+<td><span class="hs-code">4819100000</span></td>
+<td>瓦楞纸箱（包装材料）</td>
+<td><span class="hs-category">包装</span></td>
+</tr>
+<tr>
+<td><span class="hs-code">8504409999</span></td>
+<td>电源适配器</td>
+<td><span class="hs-category">配件</span></td>
+</tr>
+<tr>
+<td><span class="hs-code">8518100090</span></td>
+<td>话筒/麦克风</td>
+<td><span class="hs-category">主机</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="tip-box">
+<strong>⚠️ 重要：</strong> HS编码关系到<strong>关税、增值税、退税率</strong>。报关前务必与报关行确认编码。编码错误会导致滞关、罚款。
+</div>
+</div>
+</div>
+
+<!-- ==================== TRADE TERMS ==================== -->
+<div class="section" id="terms">
+<div class="container">
+<div class="sec-header" style="margin-top:0">
+<h2>💱 四大贸易术语</h2>
+<p>决定谁负责运费、保险、风险。跟客户报价前必须理清</p>
+</div>
+
+<div class="trade-cards">
+<div class="trade-card">
+<div class="tc-code">EXW</div>
+<div class="tc-name">Ex Works</div>
+<div class="tc-cn">工厂交货</div>
+<div class="tc-desc">
+买方负责<strong>所有运输和费用</strong>。我们只负责货到厂门口。风险最小但价格最低。通常用于小单或样品。
+</div>
+</div>
+
+<div class="trade-card">
+<div class="tc-code">FOB</div>
+<div class="tc-name">Free On Board</div>
+<div class="tc-cn">装运港船上交货</div>
+<div class="tc-desc">
+<span class="tc-highlight">最常用！</span> 我们负责从工厂到装运港（深圳港）的费用和风险。客户负责海运和保险。公司大部分订单用<strong>FOB深圳</strong>。
+</div>
+</div>
+
+<div class="trade-card">
+<div class="tc-code">CIF</div>
+<div class="tc-name">Cost Insurance Freight</div>
+<div class="tc-cn">成本保险费加运费</div>
+<div class="tc-desc">
+我们负责<strong>到目的港</strong>的所有费用和风险，包括海运和保险。报价高，但客户省心。用于客户要求或需要加价。
+</div>
+</div>
+
+<div class="trade-card">
+<div class="tc-code">DDP</div>
+<div class="tc-name">Delivered Duty Paid</div>
+<div class="tc-cn">完税后交货</div>
+<div class="tc-desc">
+<span class="tc-highlight">最高难度。</span> 我们负责一切到客户门口，包括进口关税和清关。风险最大但竞争力强。只有大客户才用，成本控制要求高。
+</div>
+</div>
+</div>
+
+<div class="tip-box">
+<strong>🎯 销售建议：</strong> 初期客户优先推FOB，避免DDP的复杂性和风险。除非客户坚持且有溢价补偿。
+</div>
+</div>
+</div>
+
+<!-- ==================== DOCUMENT CHECKLIST ==================== -->
+<div class="section" id="docs">
+<div class="container">
+<div class="sec-header" style="margin-top:0">
+<h2>📄 报关单据清单</h2>
+<p>缺一不可。学会每种单据的用途</p>
+</div>
+
+<div class="checklist-section">
+<div class="checklist-title">报关必需单据</div>
+<div class="checklist-items">
+<div class="checklist-item">
+<div class="checkbox">✓</div>
+<div class="item-name">报关单</div>
+<div class="item-detail">海关官方表单，申报货物、数量、HS编码、值万等</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox">✓</div>
+<div class="item-name">商业发票 (Commercial Invoice)</div>
+<div class="item-detail">记录买卖方、货物描述、单价、总值、付款条件、签名盖章</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox">✓</div>
+<div class="item-name">装箱单 (Packing List)</div>
+<div class="item-detail">详细列出每箱内容、毛重、净重。海关查货时对照</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox">✓</div>
+<div class="item-name">出口合同</div>
+<div class="item-detail">双方签署的正式销售合同，海关要求提供</div>
+</div>
+</div>
+</div>
+
+<div class="checklist-section">
+<div class="checklist-title">运输单据</div>
+<div class="checklist-items">
+<div class="checklist-item">
+<div class="checkbox"></div>
+<div class="item-name">提单 (Bill of Lading)</div>
+<div class="item-detail">船公司出具，是货物所有权证明和提货凭证。最重要！</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox"></div>
+<div class="item-name">订舱确认书</div>
+<div class="item-detail">货代出具，确认舱位、船期、柜号等</div>
+</div>
+</div>
+</div>
+
+<div class="checklist-section">
+<div class="checklist-title">辅助单据（根据目的国要求）</div>
+<div class="checklist-items">
+<div class="checklist-item">
+<div class="checkbox"></div>
+<div class="item-name">产地证 (Certificate of Origin)</div>
+<div class="item-detail">证明货物原产地为中国，某些国家（美国等）要求</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox"></div>
+<div class="item-name">质检报告</div>
+<div class="item-detail">如客户要求，证明产品通过质检</div>
+</div>
+<div class="checklist-item">
+<div class="checkbox"></div>
+<div class="item-name">保险单 (Insurance Policy)</div>
+<div class="item-detail">CIF条款下需要，证明已投保运输风险</div>
+</div>
+</div>
+</div>
+
+<div class="tip-box">
+<strong>⚡ 操作要点：</strong> 发票和装箱单上的<strong>货物描述、数量、重量必须与报关单一致</strong>，否则海关会布控。通常报关行会帮你检查，但最好自己也过一遍。
+</div>
+</div>
+</div>
+
+<!-- ==================== CUSTOMS VOCAB ==================== -->
+<div class="section" id="vocab">
+<div class="container">
+<div class="sec-header" style="margin-top:0">
+<h2>💬 报关现场话术</h2>
+<p>跟货代、报关行、客户的常用对话和表达</p>
+</div>
+
+<div class="vocab-category">
+<div class="vocab-cat-title">📞 跟货代沟通</div>
+<div class="vocab-items">
+<div class="vocab-item">
+<div class="vocab-en">"Container is ready for loading"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">柜子准备好可以装货了</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Please arrange customs declaration"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">请安排报关</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"What is the cut-off date?"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">截关日是什么时候？</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"We need a 40HQ container"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">我们需要一个40尺高柜</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"ETD is next Monday"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">预计下周一开船</div>
+</div>
+</div>
+</div>
+
+<div class="vocab-category">
+<div class="vocab-cat-title">🏢 跟报关行沟通</div>
+<div class="vocab-items">
+<div class="vocab-item">
+<div class="vocab-en">"HS code 8527910000 for speakers"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">音箱编码8527910000</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Declared value is FOB price only"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">申报价值仅为FOB价</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Certificate of origin is enclosed"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">产地证随附</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"All invoices and packing lists included"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">所有发票和装箱单已附</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Please confirm the HS code before filing"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">请在申报前确认HS编码</div>
+</div>
+</div>
+</div>
+
+<div class="vocab-category">
+<div class="vocab-cat-title">👥 跟客户沟通</div>
+<div class="vocab-items">
+<div class="vocab-item">
+<div class="vocab-en">"Shipment ready to load next week"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">货物下周准备装柜</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Please remit 70% balance upon receipt of B/L copy"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">收到提单副本后请安排70%尾款</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Your FOB price is $12, landed cost about $18-20"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">FOB价$12，到岸成本约$18-20</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Lead time 45 days from order to shipment"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">从订单到出货45天交期</div>
+</div>
+<div class="vocab-item">
+<div class="vocab-en">"Port of discharge is Los Angeles"</div>
+<div class="vocab-slash"> / </div>
+<div class="vocab-cn">目的港是洛杉矶</div>
+</div>
+</div>
+</div>
+
+<div class="tip-box">
+<strong>💡 实用建议：</strong> 把这些短语保存到手机备忘录，客户沟通时直接复制粘贴。专业的英文表达会大大提升你在客户心中的信任度。
+</div>
+</div>
+</div>
+
+<script>
+function showSection(button, sectionId) {
+  // Hide all sections
+  const sections = document.querySelectorAll('.section');
+  sections.forEach(section => section.classList.remove('active'));
+
+  // Remove active class from all tabs
+  const tabs = document.querySelectorAll('.sub-tab');
+  tabs.forEach(tab => tab.classList.remove('active'));
+
+  // Show selected section
+  document.getElementById(sectionId).classList.add('active');
+
+  // Add active class to clicked tab
+  button.classList.add('active');
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+}
+
+function toggleStep(stepElement) {
+  const isOpen = stepElement.classList.contains('open');
+
+  // Close all other steps
+  document.querySelectorAll('.flow-step').forEach(step => {
+    step.classList.remove('open');
+  });
+
+  // Toggle current step
+  if (!isOpen) {
+    stepElement.classList.add('open');
+  }
+}
+
+// Add click handlers to checklist items
+document.addEventListener('DOMContentLoaded', function() {
+  const checkboxes = document.querySelectorAll('.checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('click', function(event) {
+      event.stopPropagation();
+      this.classList.toggle('checked');
+    });
+  });
+});
+</script>
+</body>
+</html>

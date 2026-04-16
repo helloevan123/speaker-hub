@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单据生成 - SPEAKER_HUB</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #08080c;
+            --s1: #101018;
+            --s2: #181822;
+            --s3: #22222e;
+            --s4: #2c2c3a;
+            --accent: #00ffc8;
+            --blue: #4d8eff;
+            --pink: #ff4d8e;
+            --yellow: #ffd84d;
+            --text: #eee;
+            --text2: #999;
+            --text3: #555;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--s3);
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+        }
+
+        .top-nav .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            letter-spacing: 2px;
+            flex-shrink: 0;
+        }
+
+        .main-tabs {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 2px 0;
+        }
+
+        .main-tab {
+            font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            padding: 7px 14px;
+            border-radius: 18px;
+            border: 1px solid var(--s3);
+            background: transparent;
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .main-tab:hover {
+            border-color: var(--text3);
+            color: var(--text);
+        }
+
+        .main-tab.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--s1);
+            border-bottom: 1px solid var(--s3);
+            gap: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            background: none;
+            border: none;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background-color: var(--s2);
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background-color: var(--s2);
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            width: 100%;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-section {
+            background-color: var(--s2);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: var(--text2);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background-color: var(--s3);
+            color: var(--text);
+            border: 1px solid var(--s3);
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background-color: rgba(0, 255, 200, 0.05);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .table-container {
+            background-color: var(--s2);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: var(--s3);
+            color: var(--accent);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--s3);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(0, 255, 200, 0.05);
+        }
+
+        .table-input {
+            background-color: var(--s3);
+            color: var(--text);
+            border: 1px solid var(--s3);
+            padding: 6px 8px;
+            border-radius: 3px;
+            width: 100%;
+            font-size: 13px;
+        }
+
+        .table-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .table-btns {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--s3);
+            color: var(--text);
+            border: 1px solid var(--s3);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--s2);
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background-color: #ff2d55;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.8;
+        }
+
+        .totals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background-color: rgba(0, 255, 200, 0.1);
+            border-radius: 4px;
+        }
+
+        .total-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-label {
+            color: var(--text2);
+            font-weight: 500;
+        }
+
+        .total-value {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .preview-section {
+            background-color: var(--s2);
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .preview-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .preview-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .preview-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .preview-block {
+            color: var(--text2);
+        }
+
+        .preview-block-title {
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .preview-block-line {
+            margin-bottom: 4px;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+
+        .preview-table th {
+            background-color: var(--s3);
+            color: var(--accent);
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .preview-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--s3);
+        }
+
+        .preview-footer {
+            font-size: 12px;
+            color: var(--text2);
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .export-btn {
+            background-color: var(--blue);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .spacing-top {
+            margin-top: 30px;
+        }
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-top: 40px;
+            font-size: 13px;
+        }
+
+        .signature-block {
+            border-top: 1px solid var(--s3);
+            padding-top: 20px;
+        }
+
+        .signature-label {
+            color: var(--text2);
+            margin-bottom: 30px;
+        }
+
+        .signature-date {
+            margin-top: 10px;
+            color: var(--text3);
+        }
+
+        .packing-input {
+            background-color: var(--s3);
+            color: var(--text);
+            border: 1px solid var(--s3);
+            padding: 6px 8px;
+            border-radius: 3px;
+            width: 100%;
+            font-size: 12px;
+        }
+
+        .packing-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-info {
+                grid-template-columns: 1fr;
+            }
+
+            .signature-section {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab-btn {
+                flex: 1 1 50%;
+            }
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .clause-text {
+            color: var(--text2);
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .clause-label {
+            color: var(--accent);
+            font-weight: 600;
+            display: inline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <span class="logo">SPEAKER_HUB</span>
+            <div class="main-tabs">
+                <a href="index.html" class="main-tab">📐 参数模拟</a>
+                <a href="export.html" class="main-tab">📦 报关出口</a>
+                <a href="docs.html" class="main-tab active">🧾 单据生成</a>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0, event)">📝 数据输入</button>
+            <button class="tab-btn" onclick="switchTab(1, event)">🧾 商业发票</button>
+            <button class="tab-btn" onclick="switchTab(2, event)">📜 出口合同</button>
+            <button class="tab-btn" onclick="switchTab(3, event)">📦 装箱单</button>
+        </div>
+
+        <div class="content">
+            <!-- Tab 1: 数据输入 -->
+            <div class="tab-content active">
+                <div style="max-width: 1200px; margin: 0 auto; width: 100%;">
+                    <!-- 卖方信息 -->
+                    <div class="form-section">
+                        <div class="section-title">卖方信息 Seller</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>公司名 Company Name</label>
+                                <input type="text" id="seller_name" value="广州民福电子音响有限公司">
+                            </div>
+                            <div class="form-group">
+                                <label>地址 Address</label>
+                                <input type="text" id="seller_address" value="广州市番禺区大龙街茶东村东盛三横路2号102">
+                            </div>
+                            <div class="form-group">
+                                <label>电话 Phone</label>
+                                <input type="text" id="seller_phone" value="020-34881706">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 买方信息 -->
+                    <div class="form-section">
+                        <div class="section-title">买方信息 Buyer</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>公司名 Company Name</label>
+                                <input type="text" id="buyer_name" value="VICMARR AUDIO INC.">
+                            </div>
+                            <div class="form-group">
+                                <label>地址 Address</label>
+                                <input type="text" id="buyer_address" value="9 Kilmer Ct. Edison. NJ08817">
+                            </div>
+                            <div class="form-group">
+                                <label>电话 Phone</label>
+                                <input type="text" id="buyer_phone" value="7183030111">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 订单信息 -->
+                    <div class="form-section">
+                        <div class="section-title">订单信息 Order Info</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>合同号/PO号 Contract/PO</label>
+                                <input type="text" id="contract_no" placeholder="PO7170 PO7227 PO7214 PO7183">
+                            </div>
+                            <div class="form-group">
+                                <label>签约日期 Signing Date</label>
+                                <input type="date" id="contract_date">
+                            </div>
+                            <div class="form-group">
+                                <label>签约地点 Place</label>
+                                <input type="text" id="contract_place" value="广州">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>成交方式 Trade Terms</label>
+                                <select id="trade_terms">
+                                    <option value="FOB">FOB</option>
+                                    <option value="CIF">CIF</option>
+                                    <option value="EXW">EXW</option>
+                                    <option value="DDP">DDP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>付款条件 Payment</label>
+                                <select id="payment_terms">
+                                    <option value="T/T">T/T</option>
+                                    <option value="L/C">L/C</option>
+                                    <option value="D/P">D/P</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>出口口岸 Loading Port</label>
+                                <input type="text" id="loading_port" value="深圳蛇口">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>目的地 Destination</label>
+                                <input type="text" id="destination" value="美国">
+                            </div>
+                            <div class="form-group">
+                                <label>装运期 Shipping Date</label>
+                                <input type="text" id="shipping_date" placeholder="2025年8月30日前装运">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品明细 -->
+                    <div class="form-section">
+                        <div class="section-title">商品明细 Items</div>
+                        <div class="table-btns">
+                            <button class="btn btn-primary" onclick="addItemRow()">+ 添加行</button>
+                            <button class="btn btn-secondary" onclick="loadSampleData()">📦 载入示例</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>品牌 Brand</th>
+                                        <th>品名+型号 Description</th>
+                                        <th>数量 Qty</th>
+                                        <th>单位 Unit</th>
+                                        <th>单价(USD) Unit Price</th>
+                                        <th>金额(USD) Amount</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items_tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="totals">
+                            <div class="total-item">
+                                <span class="total-label">总件数 Total Qty</span>
+                                <span class="total-value" id="total_qty">0</span>
+                            </div>
+                            <div class="total-item">
+                                <span class="total-label">总金额(USD) Total Amount</span>
+                                <span class="total-value" id="total_amount">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: 商业发票 -->
+            <div class="tab-content">
+                <div style="max-width: 900px; margin: 0 auto; width: 100%;">
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <div class="preview-title">COMMERCIAL INVOICE</div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; font-size: 12px;">
+                            <div>
+                                <div style="color: var(--text2); margin-bottom: 20px;">
+                                    <div style="color: var(--accent); font-weight: 600; margin-bottom: 5px;">Invoice No.</div>
+                                    <div id="inv_number" style="color: var(--text);">INV-</div>
+                                </div>
+                                <div style="color: var(--text2);">
+                                    <div style="color: var(--accent); font-weight: 600; margin-bottom: 5px;">Seller</div>
+                                    <div id="inv_seller_name" style="color: var(--text); margin-bottom: 3px;"></div>
+                                    <div id="inv_seller_address" style="color: var(--text); margin-bottom: 3px;"></div>
+                                    <div id="inv_seller_phone" style="color: var(--text);"></div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <div style="color: var(--text2); margin-bottom: 20px;">
+                                    <div style="color: var(--accent); font-weight: 600; margin-bottom: 5px;">Date</div>
+                                    <div id="inv_date" style="color: var(--text);">-</div>
+                                </div>
+                                <div style="color: var(--text2);">
+                                    <div style="color: var(--accent); font-weight: 600; margin-bottom: 5px;">Buyer</div>
+                                    <div id="inv_buyer_name" style="color: var(--text); margin-bottom: 3px;"></div>
+                                    <div id="inv_buyer_address" style="color: var(--text); margin-bottom: 3px;"></div>
+                                    <div id="inv_buyer_phone" style="color: var(--text);"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; padding: 15px; background-color: rgba(0,255,200,0.05); border-radius: 4px; font-size: 12px;">
+                            <div>
+                                <span style="color: var(--text2);">Terms: </span>
+                                <span id="inv_terms" style="color: var(--accent); font-weight: 600;">-</span>
+                            </div>
+                            <div>
+                                <span style="color: var(--text2);">Payment: </span>
+                                <span id="inv_payment" style="color: var(--accent); font-weight: 600;">-</span>
+                            </div>
+                        </div>
+
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Description</th>
+                                    <th style="text-align: right;">Quantity</th>
+                                    <th style="text-align: right;">Unit Price(USD)</th>
+                                    <th style="text-align: right;">Amount(USD)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inv_items_tbody">
+                            </tbody>
+                        </table>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div></div>
+                            <div style="padding: 15px; background-color: rgba(0,255,200,0.1); border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; color: var(--text2); margin-bottom: 10px;">
+                                    <span>Total Amount(USD)</span>
+                                    <span id="inv_total" style="color: var(--accent); font-weight: 600;">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preview-footer">
+                            以下空白 / NOTHING FOLLOWS
+                        </div>
+                    </div>
+
+                    <button class="export-btn" onclick="exportInvoice()">📥 导出发票 Excel</button>
+                </div>
+            </div>
+
+            <!-- Tab 3: 出口合同 -->
+            <div class="tab-content">
+                <div style="max-width: 900px; margin: 0 auto; width: 100%;">
+                    <div class="preview-section">
+                        <div class="preview-header">
+                            <div class="preview-title" style="letter-spacing: 8px;">出 口 成 交 合 同</div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; font-size: 12px;">
+                            <div>
+                                <div style="color: var(--text2); margin-bottom: 15px;">
+                                    <div style="color: var(--accent); font-weight: 600; margin-bottom: 3px;">卖方 Seller</div>
+                                    <div id="contract_seller_name" style="color: var(--text);"></div>
+                                    <div style="color: var(--text3); margin-top: 5px;">地址 Address</div>
+                                    <div id="contract_seller_address" style="color: var(--text); margin-bottom: 8px;"></div>
+                                    <div style="color: var(--text3);">电话 Phone</div>
+                                    <div id="contract_seller_phone" style="color: var(--text);"></div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <div style="margin-bottom: 15px;">
+                                    <div style="color: var(--text3);">合同号</div>
+                                    <div id="contract_no_display" style="color: var(--accent); font-weight: 600;"></div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <div style="color: var(--text3);">签约日期</div>
+                                    <div id="contract_date_display" style="color: var(--accent); font-weight: 600;"></div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--text3);">签约地点</div>
+                                    <div id="contract_place_display" style="color: var(--accent); font-weight: 600;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <div style="color: var(--text2); margin-bottom: 8px;">
+                                <span style="font-weight: 600;">买方 Buyer</span>
+                            </div>
+                            <div id="contract_buyer_name" style="color: var(--text); margin-bottom: 3px;"></div>
+                            <div style="color: var(--text3);">地址 Address</div>
+                            <div id="contract_buyer_address" style="color: var(--text); margin-bottom: 8px;"></div>
+                            <div style="color: var(--text3);">电话 Phone</div>
+                            <div id="contract_buyer_phone" style="color: var(--text);"></div>
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">条款：</span>兹经买卖双方同意，按下列条款成交：
+                        </div>
+
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th>(1)货物名称及规格</th>
+                                    <th style="text-align: right;">(2)数量</th>
+                                    <th style="text-align: right;">(3)单价</th>
+                                    <th style="text-align: right;">(4)金额</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contract_items_tbody">
+                            </tbody>
+                        </table>
+
+                        <div style="padding: 15px; background-color: rgba(0,255,200,0.05); border-radius: 4px; margin-bottom: 20px; font-size: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: var(--text2);">总数量</span>
+                                <span id="contract_total_qty" style="color: var(--accent); font-weight: 600;">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text2);">总金额(USD)</span>
+                                <span id="contract_total_amount" style="color: var(--accent); font-weight: 600;">$0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(5) 包装：</span>标准出口装
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(6) 装运标记：</span>按买方规定
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(7) 运输起讫地点：</span>由 <span id="contract_port_display">-</span> 至 <span id="contract_dest_display">-</span>
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(8) 装运期：</span><span id="contract_shipping_display">-</span>
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(9) 付款条件：</span><span id="contract_payment_display">-</span>
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(10) 质量要求：</span>按双方或买方与生产厂确认的样板交货。如有质量问题，可以退货。
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(11) 仲裁：</span>凡因执行本合同所发生的或与本合同有关的一切争议,应由买卖双方通过友好协商解决；如协商不能解决,应提交中国国际贸易促进委员会对外经济贸易仲裁委员会根据该会所制订的仲裁规则和程序进行仲裁。仲裁结果是终局的,对双方均有约束力。仲裁费用除非另有决定,由败诉方负责。
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(12) 其他：</span>本合同总价已包含卖方所送样板和配件。
+                        </div>
+
+                        <div class="clause-text">
+                            <span class="clause-label">(13) 备注：</span>
+                        </div>
+
+                        <div class="signature-section">
+                            <div class="signature-block">
+                                <div style="color: var(--text2);">卖方 Seller</div>
+                                <div class="signature-label">
+                                    <div style="margin-bottom: 5px;">广州民福电子音响有限公司</div>
+                                    <div>(Signed)</div>
+                                </div>
+                                <div class="signature-date" id="contract_sig_date">-</div>
+                            </div>
+                            <div class="signature-block">
+                                <div style="color: var(--text2);">买方 Buyer</div>
+                                <div class="signature-label" id="contract_buyer_sig">
+                                    <div style="margin-bottom: 5px;">-</div>
+                                    <div>(Signed)</div>
+                                </div>
+                                <div class="signature-date">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="export-btn" onclick="exportContract()">📥 导出合同 Excel</button>
+                </div>
+            </div>
+
+            <!-- Tab 4: 装箱单 -->
+            <div class="tab-content">
+                <div style="max-width: 1000px; margin: 0 auto; width: 100%;">
+                    <div class="form-section">
+                        <div class="section-title">装箱单 Packing List</div>
+                        <div style="font-size: 12px; color: var(--text2); margin-bottom: 20px;">
+                            请为每个商品项添加箱数信息 Add carton information for each item:
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>品牌 Brand</th>
+                                        <th>品名 Description</th>
+                                        <th>箱号 Carton No.</th>
+                                        <th>每箱数量 Qty/Ctn</th>
+                                        <th>箱数 No.of Ctns</th>
+                                        <th>毛重(kg) GW/Ctn</th>
+                                        <th>净重(kg) NW/Ctn</th>
+                                        <th>尺寸(cm) L×W×H</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="packing_tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">装箱汇总 Packing Summary</div>
+                        <div class="totals">
+                            <div class="total-item">
+                                <span class="total-label">总箱数 Total Ctns</span>
+                                <span class="total-value" id="total_ctns">0</span>
+                            </div>
+                            <div class="total-item">
+                                <span class="total-label">总毛重(kg) Total GW</span>
+                                <span class="total-value" id="total_gw">0</span>
+                            </div>
+                            <div class="total-item">
+                                <span class="total-label">总净重(kg) Total NW</span>
+                                <span class="total-value" id="total_nw">0</span>
+                            </div>
+                            <div class="total-item">
+                                <span class="total-label">总体积(CBM) Total CBM</span>
+                                <span class="total-value" id="total_cbm">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="export-btn" onclick="exportPackingList()">📥 导出装箱单 Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let data = {
+            seller_name: '广州民福电子音响有限公司',
+            seller_address: '广州市番禺区大龙街茶东村东盛三横路2号102',
+            seller_phone: '020-34881706',
+            buyer_name: 'VICMARR AUDIO INC.',
+            buyer_address: '9 Kilmer Ct. Edison. NJ08817',
+            buyer_phone: '7183030111',
+            contract_no: '',
+            contract_date: '',
+            contract_place: '广州',
+            trade_terms: 'FOB',
+            payment_terms: 'T/T',
+            loading_port: '深圳蛇口',
+            destination: '美国',
+            shipping_date: '',
+            items: []
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeData();
+            addItemRow();
+            renderItems();
+            attachFormListeners();
+        });
+
+        function initializeData() {
+            // 从输入框获取数据并设置初始值
+            updateDataFromForm();
+        }
+
+        function attachFormListeners() {
+            const formInputs = [
+                'seller_name', 'seller_address', 'seller_phone',
+                'buyer_name', 'buyer_address', 'buyer_phone',
+                'contract_no', 'contract_date', 'contract_place',
+                'trade_terms', 'payment_terms', 'loading_port',
+                'destination', 'shipping_date'
+            ];
+
+            formInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => {
+                        updateDataFromForm();
+                        updatePreviews();
+                    });
+                    el.addEventListener('input', () => {
+                        updateDataFromForm();
+                        updatePreviews();
+                    });
+                }
+            });
+        }
+
+        function updateDataFromForm() {
+            data.seller_name = document.getElementById('seller_name').value;
+            data.seller_address = document.getElementById('seller_address').value;
+            data.seller_phone = document.getElementById('seller_phone').value;
+            data.buyer_name = document.getElementById('buyer_name').value;
+            data.buyer_address = document.getElementById('buyer_address').value;
+            data.buyer_phone = document.getElementById('buyer_phone').value;
+            data.contract_no = document.getElementById('contract_no').value;
+            data.contract_date = document.getElementById('contract_date').value;
+            data.contract_place = document.getElementById('contract_place').value;
+            data.trade_terms = document.getElementById('trade_terms').value;
+            data.payment_terms = document.getElementById('payment_terms').value;
+            data.loading_port = document.getElementById('loading_port').value;
+            data.destination = document.getElementById('destination').value;
+            data.shipping_date = document.getElementById('shipping_date').value;
+        }
+
+        function addItemRow() {
+            data.items.push({
+                brand: '',
+                description: '',
+                qty: 0,
+                unit: '箱',
+                unit_price: 0,
+                amount: 0
+            });
+            renderItems();
+        }
+
+        function removeItemRow(index) {
+            data.items.splice(index, 1);
+            renderItems();
+        }
+
+        function renderItems() {
+            const tbody = document.getElementById('items_tbody');
+            tbody.innerHTML = '';
+
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><input type="text" class="table-input" value="${item.brand}" placeholder="品牌" onchange="updateItem(${index}, 'brand', this.value)" oninput="updateItem(${index}, 'brand', this.value)"></td>
+                    <td><input type="text" class="table-input" value="${item.description}" placeholder="品名+型号" onchange="updateItem(${index}, 'description', this.value)" oninput="updateItem(${index}, 'description', this.value)"></td>
+                    <td><input type="number" class="table-input" value="${item.qty}" placeholder="数量" onchange="updateItem(${index}, 'qty', parseFloat(this.value))" oninput="updateItem(${index}, 'qty', parseFloat(this.value))"></td>
+                    <td><input type="text" class="table-input" value="${item.unit}" placeholder="单位" onchange="updateItem(${index}, 'unit', this.value)" oninput="updateItem(${index}, 'unit', this.value)"></td>
+                    <td><input type="number" class="table-input" value="${item.unit_price}" placeholder="单价" step="0.01" onchange="updateItem(${index}, 'unit_price', parseFloat(this.value))" oninput="updateItem(${index}, 'unit_price', parseFloat(this.value))"></td>
+                    <td><input type="number" class="table-input" value="${item.amount}" placeholder="金额" step="0.01" disabled style="opacity: 0.7;"></td>
+                    <td><button class="btn btn-danger" onclick="removeItemRow(${index})">删除</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateTotals();
+            updatePreviews();
+        }
+
+        function updateItem(index, field, value) {
+            data.items[index][field] = value;
+            if (field === 'qty' || field === 'unit_price') {
+                data.items[index].amount = data.items[index].qty * data.items[index].unit_price;
+            }
+            renderItems();
+        }
+
+        function updateTotals() {
+            const totalQty = data.items.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+            const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+            document.getElementById('total_qty').textContent = totalQty.toString();
+            document.getElementById('total_amount').textContent = '$' + totalAmount.toFixed(2);
+        }
+
+        function loadSampleData() {
+            data.items = [
+                { brand: 'Technical Pro', description: '音箱 Speaker, 型号:PARTY10B2', qty: 550, unit: '箱', unit_price: 25, amount: 13750 },
+                { brand: 'Technical Pro', description: '音箱 Speaker, 型号:PARTY10R2', qty: 550, unit: '箱', unit_price: 25, amount: 13750 },
+                { brand: 'Technical Pro', description: '音箱配件 纸箱, 型号:PARTY10B2', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 功放板, 型号:PARTY10B2', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 纸箱, 型号:PARTY10R2', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 功放板, 型号:PARTY10R2', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 功放板, 型号:Volcano15PKG', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 喇叭, 型号:Volcano15PKG', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 纸箱, 型号:Volcano15PKG', qty: 1, unit: '箱', unit_price: 0.25, amount: 0.25 },
+                { brand: 'Technical Pro', description: '音箱配件 电源板, 型号:RAINB215', qty: 2, unit: '箱', unit_price: 0.25, amount: 0.50 },
+                { brand: 'Technical Pro', description: '音箱 Speaker, 型号:Volcano15PKG', qty: 1000, unit: '箱', unit_price: 40.78, amount: 40780 },
+                { brand: 'Technical Pro', description: '音箱 Speaker, 型号:Boombox61', qty: 500, unit: '箱', unit_price: 15.4, amount: 7700 },
+                { brand: 'Technical Pro', description: '音箱配件 支架 Speaker stand, 型号:PT1K', qty: 167, unit: '箱', unit_price: 33.6, amount: 5611.2 }
+            ];
+            renderItems();
+        }
+
+        function updatePreviews() {
+            updateInvoicePreview();
+            updateContractPreview();
+            updatePackingListPreview();
+        }
+
+        function updateInvoicePreview() {
+            const invNo = data.contract_no ? 'INV-' + data.contract_no : 'INV-';
+            document.getElementById('inv_number').textContent = invNo;
+            document.getElementById('inv_date').textContent = data.contract_date || '-';
+            document.getElementById('inv_seller_name').textContent = data.seller_name;
+            document.getElementById('inv_seller_address').textContent = data.seller_address;
+            document.getElementById('inv_seller_phone').textContent = data.seller_phone;
+            document.getElementById('inv_buyer_name').textContent = data.buyer_name;
+            document.getElementById('inv_buyer_address').textContent = data.buyer_address;
+            document.getElementById('inv_buyer_phone').textContent = data.buyer_phone;
+            document.getElementById('inv_terms').textContent = data.trade_terms + ' ' + data.loading_port;
+            document.getElementById('inv_payment').textContent = data.payment_terms;
+
+            const tbody = document.getElementById('inv_items_tbody');
+            tbody.innerHTML = '';
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.brand} ${item.description}</td>
+                    <td style="text-align: right;">${item.qty}</td>
+                    <td style="text-align: right;">$${parseFloat(item.unit_price).toFixed(2)}</td>
+                    <td style="text-align: right;">$${parseFloat(item.amount).toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            document.getElementById('inv_total').textContent = '$' + totalAmount.toFixed(2);
+        }
+
+        function updateContractPreview() {
+            document.getElementById('contract_seller_name').textContent = data.seller_name;
+            document.getElementById('contract_seller_address').textContent = data.seller_address;
+            document.getElementById('contract_seller_phone').textContent = data.seller_phone;
+            document.getElementById('contract_buyer_name').textContent = data.buyer_name;
+            document.getElementById('contract_buyer_address').textContent = data.buyer_address;
+            document.getElementById('contract_buyer_phone').textContent = data.buyer_phone;
+            document.getElementById('contract_no_display').textContent = data.contract_no || '-';
+            document.getElementById('contract_date_display').textContent = data.contract_date || '-';
+            document.getElementById('contract_place_display').textContent = data.contract_place;
+            document.getElementById('contract_port_display').textContent = data.loading_port;
+            document.getElementById('contract_dest_display').textContent = data.destination;
+            document.getElementById('contract_shipping_display').textContent = data.shipping_date || '-';
+            document.getElementById('contract_payment_display').textContent = data.payment_terms;
+            document.getElementById('contract_buyer_sig').innerHTML = `<div style="margin-bottom: 5px;">${data.buyer_name}</div><div>(Signed)</div>`;
+            document.getElementById('contract_sig_date').textContent = data.contract_date || '-';
+
+            const tbody = document.getElementById('contract_items_tbody');
+            tbody.innerHTML = '';
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.brand} ${item.description}</td>
+                    <td style="text-align: right;">${item.qty} ${item.unit}</td>
+                    <td style="text-align: right;">$${parseFloat(item.unit_price).toFixed(2)}</td>
+                    <td style="text-align: right;">$${parseFloat(item.amount).toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const totalQty = data.items.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+            const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            document.getElementById('contract_total_qty').textContent = totalQty.toString();
+            document.getElementById('contract_total_amount').textContent = '$' + totalAmount.toFixed(2);
+        }
+
+        function updatePackingListPreview() {
+            const tbody = document.getElementById('packing_tbody');
+            tbody.innerHTML = '';
+
+            let totalCtns = 0;
+            let totalGW = 0;
+            let totalNW = 0;
+            let totalCBM = 0;
+
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const packerData = data.packing || {};
+                const itemPacking = packerData[index] || {};
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.brand}</td>
+                    <td>${item.description}</td>
+                    <td><input type="text" class="packing-input" value="${itemPacking.carton_no || ''}" placeholder="如: 1-550" onchange="updatePacking(${index}, 'carton_no', this.value)"></td>
+                    <td><input type="number" class="packing-input" value="${itemPacking.qty_ctn || ''}" placeholder="数量" step="0.01" onchange="updatePacking(${index}, 'qty_ctn', parseFloat(this.value))"></td>
+                    <td><input type="number" class="packing-input" value="${itemPacking.no_ctns || ''}" placeholder="箱数" onchange="updatePacking(${index}, 'no_ctns', parseFloat(this.value))"></td>
+                    <td><input type="number" class="packing-input" value="${itemPacking.gw_ctn || ''}" placeholder="毛重" step="0.01" onchange="updatePacking(${index}, 'gw_ctn', parseFloat(this.value))"></td>
+                    <td><input type="number" class="packing-input" value="${itemPacking.nw_ctn || ''}" placeholder="净重" step="0.01" onchange="updatePacking(${index}, 'nw_ctn', parseFloat(this.value))"></td>
+                    <td><input type="text" class="packing-input" value="${itemPacking.size || ''}" placeholder="L×W×H" onchange="updatePacking(${index}, 'size', this.value)"></td>
+                `;
+                tbody.appendChild(tr);
+
+                if (itemPacking.no_ctns) {
+                    totalCtns += parseFloat(itemPacking.no_ctns) || 0;
+                    totalGW += (parseFloat(itemPacking.gw_ctn) || 0) * (parseFloat(itemPacking.no_ctns) || 0);
+                    totalNW += (parseFloat(itemPacking.nw_ctn) || 0) * (parseFloat(itemPacking.no_ctns) || 0);
+                }
+            });
+
+            document.getElementById('total_ctns').textContent = totalCtns.toString();
+            document.getElementById('total_gw').textContent = totalGW.toFixed(2);
+            document.getElementById('total_nw').textContent = totalNW.toFixed(2);
+            document.getElementById('total_cbm').textContent = totalCBM.toFixed(4);
+        }
+
+        function updatePacking(index, field, value) {
+            if (!data.packing) data.packing = {};
+            if (!data.packing[index]) data.packing[index] = {};
+            data.packing[index][field] = value;
+            updatePackingListPreview();
+        }
+
+        function switchTab(tabIndex, event) {
+            event.preventDefault();
+            // 隐藏所有tab
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 显示选中的tab
+            document.querySelectorAll('.tab-content')[tabIndex].classList.add('active');
+            document.querySelectorAll('.tab-btn')[tabIndex].classList.add('active');
+
+            updatePreviews();
+        }
+
+        function exportInvoice() {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+            let row = 0;
+            const addRow = (data) => {
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data };
+                row++;
+            };
+
+            // 标题
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'COMMERCIAL INVOICE', s: { bold: true, fontSize: 14 } };
+            row += 2;
+
+            // 发票号和日期
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'Invoice No.' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: 'INV-' + (data.contract_no || '') };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Date' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: data.contract_date };
+            row++;
+
+            row++;
+
+            // 卖方买方信息
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'Seller', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Buyer', s: { bold: true } };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_name };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.buyer_name };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_address };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.buyer_address };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_phone };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.buyer_phone };
+            row += 2;
+
+            // 条款
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'Terms: ' + data.trade_terms + ' ' + data.loading_port };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Payment: ' + data.payment_terms };
+            row += 2;
+
+            // 商品表
+            const tableStartRow = row;
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'No.', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: 'Description', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: 'Quantity', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Unit Price(USD)', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: 'Amount(USD)', s: { bold: true } };
+            row++;
+
+            data.items.forEach((item, index) => {
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: index + 1 };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: item.brand + ' ' + item.description };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: item.qty };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: item.unit_price };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: item.amount };
+                row++;
+            });
+
+            row++;
+            const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Total', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: totalAmount, s: { bold: true } };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '以下空白 / NOTHING FOLLOWS' };
+
+            worksheet['!cols'] = [
+                { wch: 8 },
+                { wch: 35 },
+                { wch: 12 },
+                { wch: 15 },
+                { wch: 15 }
+            ];
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, '商业发票');
+            XLSX.writeFile(workbook, '商业发票.xlsx');
+        }
+
+        function exportContract() {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+            let row = 0;
+
+            // 标题
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: '出 口 成 交 合 同', s: { bold: true, fontSize: 14 } };
+            row += 2;
+
+            // 卖方、合同号等
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '卖方 Seller' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '合同号' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_name };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.contract_no };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '地址 Address' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '签约日期' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_address };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.contract_date };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '电话 Phone' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '签约地点' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_phone };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.contract_place };
+            row += 2;
+
+            // 买方
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '买方 Buyer' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.buyer_name };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '地址 Address' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.buyer_address };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '电话 Phone' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.buyer_phone };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '条款：兹经买卖双方同意，按下列条款成交：' };
+            row += 2;
+
+            // 商品表
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(1)货物名称及规格', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: '(2)数量', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: '(3)单价', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '(4)金额', s: { bold: true } };
+            row++;
+
+            data.items.forEach((item, index) => {
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: item.brand + ' ' + item.description };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: item.qty + ' ' + item.unit };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: '$' + item.unit_price };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '$' + item.amount };
+                row++;
+            });
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '合计' };
+            const totalQty = data.items.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0);
+            const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: totalQty };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: '$' + totalAmount };
+            row += 2;
+
+            // 条款
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(5) 包装：标准出口装' };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(6) 装运标记：按买方规定' };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(7) 运输起讫地点：由 ' + data.loading_port + ' 至 ' + data.destination };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(8) 装运期：' + (data.shipping_date || '-') };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(9) 付款条件：' + data.payment_terms };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(10) 质量要求：按双方或买方与生产厂确认的样板交货。如有质量问题，可以退货。' };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(11) 仲裁：凡因执行本合同所发生的或与本合同有关的一切争议,应由买卖双方通过友好协商解决；如协商不能解决,应提交中国国际贸易促进委员会对外经济贸易仲裁委员会进行仲裁。' };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(12) 其他：本合同总价已包含卖方所送样板和配件。' };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(13) 备注：' };
+            row += 3;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '卖方 Seller', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: '买方 Buyer', s: { bold: true } };
+            row += 3;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '广州民福电子音响有限公司' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: data.buyer_name };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: '(Signed)' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: '(Signed)' };
+
+            worksheet['!cols'] = [
+                { wch: 40 },
+                { wch: 15 },
+                { wch: 15 },
+                { wch: 15 }
+            ];
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, '出口合同');
+            XLSX.writeFile(workbook, '出口合同.xlsx');
+        }
+
+        function exportPackingList() {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+            let row = 0;
+
+            // 标题
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'PACKING LIST', s: { bold: true, fontSize: 14 } };
+            row += 2;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'Seller' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Contract No.' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.seller_name };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.contract_no };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'Buyer' };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Date' };
+            row++;
+
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: data.buyer_name };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: data.contract_date };
+            row += 2;
+
+            // 装箱表
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: 'No.', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: 'Brand', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: 'Description', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: 'Carton No.', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: 'Qty/Ctn', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 5 })] = { v: 'No.of Ctns', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 6 })] = { v: 'GW/Ctn(kg)', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 7 })] = { v: 'NW/Ctn(kg)', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 8 })] = { v: 'Size(L×W×H)', s: { bold: true } };
+            row++;
+
+            let totalCtns = 0;
+            let totalGW = 0;
+            let totalNW = 0;
+
+            data.items.forEach((item, index) => {
+                const packing = (data.packing || {})[index] || {};
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 0 })] = { v: index + 1 };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 1 })] = { v: item.brand };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 2 })] = { v: item.description };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 3 })] = { v: packing.carton_no || '' };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 4 })] = { v: packing.qty_ctn || '' };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 5 })] = { v: packing.no_ctns || '' };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 6 })] = { v: packing.gw_ctn || '' };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 7 })] = { v: packing.nw_ctn || '' };
+                worksheet[XLSX.utils.encode_cell({ r: row, c: 8 })] = { v: packing.size || '' };
+                row++;
+
+                if (packing.no_ctns) {
+                    totalCtns += parseFloat(packing.no_ctns) || 0;
+                    totalGW += (parseFloat(packing.gw_ctn) || 0) * (parseFloat(packing.no_ctns) || 0);
+                    totalNW += (parseFloat(packing.nw_ctn) || 0) * (parseFloat(packing.no_ctns) || 0);
+                }
+            });
+
+            row++;
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 5 })] = { v: 'TOTAL', s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 5 })] = { v: totalCtns, s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 6 })] = { v: totalGW, s: { bold: true } };
+            worksheet[XLSX.utils.encode_cell({ r: row, c: 7 })] = { v: totalNW, s: { bold: true } };
+
+            worksheet['!cols'] = [
+                { wch: 8 },
+                { wch: 15 },
+                { wch: 25 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 12 },
+                { wch: 15 }
+            ];
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, '装箱单');
+            XLSX.writeFile(workbook, '装箱单.xlsx');
+        }
+
+        function exportAll() {
+            exportInvoice();
+            setTimeout(() => exportContract(), 500);
+            setTimeout(() => exportPackingList(), 1000);
+        }
+    </script>
+</body>
+</html>
